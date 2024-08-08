@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.Date;
+
 
 @Entity
 @Table(name = "Student")
@@ -23,10 +23,10 @@ public class Student {
     @Column(name = "last_name", nullable = false, columnDefinition = "TEXT")
     private String lastName;
 
-    @Column(name="email", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "email", nullable = false, columnDefinition = "TEXT")
     private String email;
 
-    @Column(name="", nullable = false, columnDefinition = "DATE")
+    @Column(name = "", nullable = false, columnDefinition = "DATE")
     private LocalDate dob; // Date of birth.
 
     @Transient

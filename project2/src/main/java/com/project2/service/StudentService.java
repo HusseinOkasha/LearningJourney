@@ -23,4 +23,11 @@ public class StudentService {
     }
 
 
+    public Student addNewStudent(Student student) {
+        Boolean exist = studentRepository.existsByEmail(student.getEmail());
+        if(exist){
+            throw new IllegalStateException("this email already exists");
+        }
+        return studentRepository.save(student);
+    }
 }
