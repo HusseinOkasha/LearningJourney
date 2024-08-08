@@ -30,4 +30,7 @@ public class StudentService {
         }
         return studentRepository.save(student);
     }
+    public void deleteAllStudents(){
+        studentRepository.deleteAll();
+    }
 }
