@@ -8,7 +8,7 @@ import java.time.Period;
 
 
 @Entity
-@Table(name = "Student")
+@Table(name="student", uniqueConstraints = {@UniqueConstraint(name = "student_email_unique", columnNames = "email")})
 public class Student {
 
     @Id
@@ -35,12 +35,11 @@ public class Student {
     public Student() {
     }
 
-    public Student(String firstName, String lastName, String email, LocalDate dob, Integer age) {
+    public Student(String firstName, String lastName, String email, LocalDate dob) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.dob = dob;
-        this.age = age;
     }
 
     public Long getId() {
