@@ -1,0 +1,26 @@
+package com.project2.service;
+
+import com.project2.dao.StudentRepository;
+import com.project2.entity.Student;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class StudentService {
+
+    private final StudentRepository studentRepository;
+
+    @Autowired
+    public StudentService(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
+
+    public Student getStudentById(Long studentId) throws IllegalStateException {
+        Optional<Student> studentOptional = studentRepository.findById(studentId);
+        return studentOptional.orElseThrow(() -> new IllegalStateException("there is no student with this  id"));
+    }
+
+
+}
