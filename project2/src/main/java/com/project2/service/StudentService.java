@@ -2,6 +2,7 @@ package com.project2.service;
 
 import com.project2.dao.StudentRepository;
 import com.project2.entity.Student;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,7 @@ public class StudentService {
         return studentOptional.orElseThrow(() -> new IllegalStateException("there is no student with this  id"));
     }
 
-
+    @Transactional
     public Student addNewStudent(Student student) {
         Boolean exist = studentRepository.existsByEmail(student.getEmail());
         if(exist){
