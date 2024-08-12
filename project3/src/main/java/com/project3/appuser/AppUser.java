@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+
 
 @Entity
 @Table(name = "app_user", uniqueConstraints = {@UniqueConstraint(name="app_user_email_unique", columnNames = "email")})
@@ -57,10 +57,11 @@ public class AppUser implements UserDetails {
 
 
     // Constructors
-    public AppUser(String firstName, String lastName, String email, AppUserRole appUserRole) {
+    public AppUser(String firstName, String lastName, String email, String password, AppUserRole appUserRole) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.password = password;
         this.appUserRole = appUserRole;
     }
 
@@ -87,7 +88,7 @@ public class AppUser implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonLocked() {
+     public boolean isAccountNonLocked() {
         return !locked;
     }
 
