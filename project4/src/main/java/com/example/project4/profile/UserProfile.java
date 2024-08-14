@@ -18,6 +18,9 @@ public class UserProfile {
     @Column(name = "user_profile_image_link")
     private String userProfileImageLink;
 
+    public UserProfile() {
+    }
+
     public UserProfile(String username, String userProfileImageLink) {
         this.username = username;
         this.userProfileImageLink = userProfileImageLink;

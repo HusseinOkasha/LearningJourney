@@ -5,13 +5,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(path = "/api/profile")
+@RequestMapping("/api/profile")
 public class UserProfileController {
 
     private final  UserProfileService userProfileService;
-
-
-
 
     public UserProfileController(UserProfileService userProfileService) {
         this.userProfileService = userProfileService;
@@ -22,11 +19,10 @@ public class UserProfileController {
        return this.userProfileService.save(userProfile);
     }
 
-    @GetMapping(path = "{userProfileId}")
+    @GetMapping("/{userProfileId}")
     public UserProfile getProfile(@PathVariable UUID userProfileId){
 
         return this.userProfileService.getUserProfileById(userProfileId)
                 .orElseThrow(()-> new IllegalStateException("user Profile not found"));
-
     }
 }
