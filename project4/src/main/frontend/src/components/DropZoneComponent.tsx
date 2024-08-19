@@ -1,13 +1,24 @@
-import axios, { AxiosError } from "axios";
-import React, { useCallback, useState } from "react";
+import axios from "axios";
+import { useCallback, useState } from "react";
 
 import { useDropzone } from "react-dropzone";
 
 function DropZoneComponent() {
-  const [successMessage, setSuccessMessage] = useState<string>();
-  const [errorMessage, setErrorMessage] = useState<string>();
+  // states
+  const [uploadState, setUploadState] = useState({
+    isLoading: false,
+    successMessage: "",
+    errorMessage: "",
+  });
 
   const onDrop = useCallback(async (acceptedFiles) => {
+    // reset the states.
+    setUploadState({
+      isLoading: false,
+      errorMessage: "",
+      successMessage: "image uploaded sucessfully.",
+    });
+
     // extract the select file
     const file = acceptedFiles[0];
 
@@ -19,20 +30,32 @@ function DropZoneComponent() {
     const url: string = `http://localhost:8080/api/profile/${localStorage.getItem(
       "userProfileId"
     )}/image/upload`;
+
+    // send the request.
     try {
+      setUploadState({ ...uploadState, isLoading: true });
       const res = await axios.post(url, formData, {
         headers: { "Content-Type": "multuipart/form-data" },
       });
       if (res.status === 200) {
-        setErrorMessage("");
-        setSuccessMessage("image uploaded successfully");
+        setUploadState({
+          isLoading: false,
+          errorMessage: "",
+          successMessage: "image uploaded sucessfully.",
+        });
       } else {
-        setSuccessMessage("");
-        setErrorMessage("failed to upload the image");
+        setUploadState({
+          ...uploadState,
+          errorMessage: "failed to upload image",
+          successMessage: "",
+        });
       }
     } catch (error) {
-      setSuccessMessage("");
-      setErrorMessage("failed to upload the image");
+      setUploadState({
+        ...uploadState,
+        errorMessage: "failed to upload image",
+        successMessage: "",
+      });
     }
   }, []);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
@@ -41,11 +64,14 @@ function DropZoneComponent() {
     <div className="container-sm justify-content-center mt-4">
       <div className="row justify-content-center">
         <div className="card col-lg-6 col-md-8">
-          {successMessage && (
-            <div className="alert alert-success"> {successMessage}</div>
+          {uploadState.successMessage && (
+            <div className="alert alert-success">
+              {" "}
+              {uploadState.successMessage}
+            </div>
           )}
-          {errorMessage && (
-            <div className="alert alert-danger">{errorMessage}</div>
+          {uploadState.errorMessage && (
+            <div className="alert alert-danger">{uploadState.errorMessage}</div>
           )}
           <h2 className="text-center">upload profile image </h2>
           <div className="card-body">
