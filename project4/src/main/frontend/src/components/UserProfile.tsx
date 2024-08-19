@@ -4,11 +4,17 @@ import { useNavigate } from "react-router-dom";
 interface UserProfile {
   userProfileId: string;
   username: string;
-  userProfileImageLink: string;
+  profileImageLink: string;
 }
 
 function UserProfile() {
-  let [userProfile, setUserProfile] = useState<UserProfile>();
+  // states
+  const [userProfileState, setUserProfileState] = useState({
+    isLoading: true,
+    errorMessage: "",
+    userProfile: null,
+  });
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,28 +22,59 @@ function UserProfile() {
   }, []);
 
   const fetchUserProfile = async () => {
+    // extract user profile id from local storage.
     const profileId = localStorage.getItem("userProfileId");
+
+    // construct url.
     const url: string = "http://localhost:8080/api/profile/" + profileId;
+
     const options = {
       method: "GET",
     };
-    const response = await fetch(url, options);
-    const jsonRes: UserProfile = await response.json();
-    setUserProfile(jsonRes);
+    try {
+      setUserProfileState({ ...userProfileState, isLoading: true });
+      const response = await fetch(url, options);
+      setUserProfileState({ ...userProfileState, isLoading: false });
+      if (response.status !== 200) {
+        setUserProfileState({
+          ...userProfileState,
+          errorMessage: "failed to load please, try agian later.",
+        });
+      } else {
+        const jsonRes: UserProfile = await response.json();
+        setUserProfileState({ ...userProfileState, userProfile: jsonRes });
+      }
+    } catch (e) {
+      console.log(e);
+      setUserProfileState({
+        ...userProfileState,
+        isLoading: false,
+        errorMessage: e.message,
+      });
+    }
   };
 
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
-        <div className="col-sm-6 mb-3 mb-sm-0 text-center">
-          <h1>Hello {userProfile?.username} </h1>
-          <button
-            className="btn btn-secondary col mt-2 align-self-center"
-            onClick={() => navigate("/profile/image/upload", { replace: true })}
-          >
-            upload Image
-          </button>
-        </div>
+        {userProfileState.userProfile && (
+          <div className="col-sm-6 mb-3 mb-sm-0 text-center">
+            <h1>Hello {userProfileState.userProfile?.username} </h1>
+            <button
+              className="btn btn-secondary col mt-2 align-self-center"
+              onClick={() =>
+                navigate("/profile/image/upload", { replace: true })
+              }
+            >
+              upload Image
+            </button>
+          </div>
+        )}
+        {userProfileState.errorMessage && (
+          <div className="alert alert-danger">
+            {userProfileState.errorMessage}
+          </div>
+        )}
       </div>
     </div>
   );
