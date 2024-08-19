@@ -6,7 +6,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_profile")
+@Table(name = "user_profile",
+        uniqueConstraints = {@UniqueConstraint(name="app_user_name_unique", columnNames = "username")})
 public class UserProfile {
     @Id
     @Column(name="id")
