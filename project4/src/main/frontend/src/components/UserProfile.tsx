@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ProfileImage from "./ProfileImage";
 
 interface UserProfile {
   userProfileId: string;
@@ -10,7 +11,7 @@ interface UserProfile {
 function UserProfile() {
   // states
   const [userProfileState, setUserProfileState] = useState({
-    isLoading: true,
+    isLoading: false,
     errorMessage: "",
     userProfile: null,
   });
@@ -32,9 +33,16 @@ function UserProfile() {
       method: "GET",
     };
     try {
-      setUserProfileState({ ...userProfileState, isLoading: true });
+      setUserProfileState({
+        ...userProfileState,
+        isLoading: true,
+      });
+
       const response = await fetch(url, options);
-      setUserProfileState({ ...userProfileState, isLoading: false });
+      setUserProfileState({
+        ...userProfileState,
+        isLoading: false,
+      });
       if (response.status !== 200) {
         setUserProfileState({
           ...userProfileState,
@@ -42,7 +50,10 @@ function UserProfile() {
         });
       } else {
         const jsonRes: UserProfile = await response.json();
-        setUserProfileState({ ...userProfileState, userProfile: jsonRes });
+        setUserProfileState({
+          ...userProfileState,
+          userProfile: jsonRes,
+        });
       }
     } catch (e) {
       console.log(e);
@@ -60,14 +71,15 @@ function UserProfile() {
         {userProfileState.userProfile && (
           <div className="col-sm-6 mb-3 mb-sm-0 text-center">
             <h1>Hello {userProfileState.userProfile?.username} </h1>
-            <img
-              src={`http://localhost:8080/api/profile/${userProfileState.userProfile.id}/image/download`}
-            ></img>
+            <div className="row">
+              <ProfileImage />
+            </div>
             <button
               className="btn btn-secondary col mt-2 align-self-center"
               onClick={() =>
                 navigate("/profile/image/upload", { replace: true })
               }
+              disabled={userProfileState.isLoading}
             >
               upload Image
             </button>
