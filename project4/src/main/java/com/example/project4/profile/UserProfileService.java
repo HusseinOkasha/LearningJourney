@@ -1,5 +1,6 @@
 package com.example.project4.profile;
 
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.project4.config.bucket.BucketName;
 import com.example.project4.filestore.FileStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,17 +14,18 @@ import static org.apache.http.entity.ContentType.*;
 
 @Service
 public class UserProfileService {
-
+    // fields
     private final UserProfileRepository userProfileRepository;
     private final FileStore fileStore;
 
-
+    // constructors
     @Autowired
     public UserProfileService(UserProfileRepository userProfileRepository, FileStore fileStore) {
         this.userProfileRepository = userProfileRepository;
         this.fileStore = fileStore;
     }
 
+    // methods
     public Optional<UserProfile> getUserProfileById(UUID id ){
         return this.userProfileRepository.findById(id);
     }
@@ -43,17 +45,49 @@ public class UserProfileService {
         // extract meta data
         Map<String, String> metadata = extractMetadata(file);
 
-        //String path = String.format("%s/%s", BucketName.PROFILE_IMAGE.getBucketName(), user.getId());
-        String path = BucketName.PROFILE_IMAGE.getBucketName();
-        String filename = String.format("%s-%s", file.getOriginalFilename(), UUID.randomUUID());
-
         try {
-            fileStore.save(path, filename, Optional.of(metadata), file.getInputStream());
-            user.setUserProfileImageLink(filename);
+            /*
+            * This folder will contain all images of that specific user.
+            * Create a folder inside the bucket on s3
+            * Folder name will be : userProfileId/
+            * */
+            fileStore
+                    .createFolderIfNotExists(
+                            BucketName.PROFILE_IMAGE.getBucketName(), String.format("%s/",userProfileId)
+                    );
+            /*
+            * Construct the path which the image will be saved to.
+            * path: "userProfileId/ImageName"
+            * */
+            String path = String.format("%s/%s", userProfileId, file.getOriginalFilename());
+            fileStore
+                    .save(
+                            BucketName.PROFILE_IMAGE.getBucketName(), path,
+                            Optional.of(metadata), file.getInputStream()
+                    );
+            /*
+             * save the path of the image to the database
+             * path is: "userProfileId/imageName" ex: "1/image.png"
+             **/
+            user.setUserProfileImageLink(path);
+            userProfileRepository.save(user);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
+
+    public byte [] downloadUserProfileImage(UUID userProfileId){
+        // get the user from the database.
+        UserProfile user = getUserProfileOrThrow(userProfileId);
+
+        // get the bucket name
+        String bucketName = BucketName.PROFILE_IMAGE.getBucketName();
+
+        // download the image from s3
+        // path is: ("userProfileId/imageName")
+        return user.getUserProfileImageLink().map((path)->this.fileStore.download(bucketName, path) ).orElse(new byte[0]);
+    }
+
 
     private void isImage(MultipartFile file) {
         if (!Arrays.asList(

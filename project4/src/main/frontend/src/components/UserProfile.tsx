@@ -60,6 +60,9 @@ function UserProfile() {
         {userProfileState.userProfile && (
           <div className="col-sm-6 mb-3 mb-sm-0 text-center">
             <h1>Hello {userProfileState.userProfile?.username} </h1>
+            <img
+              src={`http://localhost:8080/api/profile/${userProfileState.userProfile.id}/image/download`}
+            ></img>
             <button
               className="btn btn-secondary col mt-2 align-self-center"
               onClick={() =>

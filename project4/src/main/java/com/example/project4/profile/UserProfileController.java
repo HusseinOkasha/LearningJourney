@@ -4,7 +4,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.awt.*;
 import java.util.UUID;
 
 @RestController
@@ -37,6 +36,11 @@ public class UserProfileController {
 
         return this.userProfileService.getUserProfileById(userProfileId)
                 .orElseThrow(()-> new IllegalStateException("user Profile not found"));
+    }
+
+    @GetMapping("{userProfileId}/image/download")
+    public byte[] downloadUserProfileImage(@PathVariable("userProfileId") UUID userProfileId) {
+        return userProfileService.downloadUserProfileImage(userProfileId);
     }
 
 }
