@@ -64,6 +64,9 @@ function DropZoneComponent() {
     <div className="container-sm justify-content-center mt-4">
       <div className="row justify-content-center">
         <div className="card col-lg-6 col-md-8">
+          {uploadState.isLoading && (
+            <div className="alert alert-info">uploading...</div>
+          )}
           {uploadState.successMessage && (
             <div className="alert alert-success">
               {" "}
