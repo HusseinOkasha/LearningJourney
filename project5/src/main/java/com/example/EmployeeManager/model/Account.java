@@ -10,10 +10,11 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name="employee", uniqueConstraints = {
+@Table(name="account", uniqueConstraints = {
         @UniqueConstraint(columnNames = "email")
 })
-public class Employee implements UserDetails {
+public class Account implements UserDetails {
+    // tables' columns
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(nullable = false, updatable = false)
@@ -42,14 +43,20 @@ public class Employee implements UserDetails {
     private Role role;
 
 
-    @Column(name= "employee_code", updatable = false)
-    private String employeeCode;
+    @Column(name= "account_code", updatable = false)
+    private String accountCode;
 
-    public Employee() {
+    private Account() {
     }
 
-    public Employee(String name, String email, String jobTitle, String phone, String imageUrl,
-                    String password, Role role, String employeeCode) {
+    private Account(String name,
+                    String email,
+                    String jobTitle,
+                    String phone,
+                    String imageUrl,
+                    String password,
+                    Role role,
+                    String accountCode ) {
         this.name = name;
         this.email = email;
         this.jobTitle = jobTitle;
@@ -57,7 +64,7 @@ public class Employee implements UserDetails {
         this.imageUrl = imageUrl;
         this.password = password;
         this.role = role;
-        this.employeeCode = employeeCode;
+        this.accountCode = accountCode;
     }
 
     public Long getId() {
@@ -120,27 +127,20 @@ public class Employee implements UserDetails {
         this.imageUrl = imageUrl;
     }
 
-    public String getEmployeeCode() {
-        return employeeCode;
+    public String getAccountCode() {
+        return accountCode;
     }
 
-    public void setEmployeeCode(String employeeCode) {
-        this.employeeCode = employeeCode;
+    public void setAccountCode(String accountCode) {
+        this.accountCode = accountCode;
     }
 
-    @Override
-    public String toString() {
-        return "Employee{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", email='" + email + '\'' +
-                ", jobTitle='" + jobTitle + '\'' +
-                ", phone='" + phone + '\'' +
-                ", imageUrl='" + imageUrl + '\'' +
-                ", employeeCode='" + employeeCode + '\'' +
-                '}';
+    public static Builder builder(){
+        // creates and returns an instance of Account.Builder.
+        return new Builder();
     }
 
+    // Implemented methods from UserDetails .
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));
@@ -174,5 +174,78 @@ public class Employee implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
+                ", jobTitle='" + jobTitle + '\'' +
+                ", phone='" + phone + '\'' +
+                ", imageUrl='" + imageUrl + '\'' +
+                ", accountCode='" + accountCode + '\'' +
+                '}';
+    }
+
+    public static class Builder {
+
+        private String name;
+        private String email;
+        private String jobTitle;
+        private String password;
+        private String phone;
+        private String imageUrl;
+        private String accountCode;
+        private Role role;
+
+        public Builder() {
+        }
+
+        public Builder withName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder withEmail(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public Builder withJobTitle(String jobTitle) {
+            this.jobTitle = jobTitle;
+            return this;
+        }
+
+        public Builder withPhone(String phone) {
+            this.phone = phone;
+            return this;
+        }
+
+        public Builder withImageUrl(String imageUrl) {
+            this.imageUrl = imageUrl;
+            return this;
+        }
+
+        public Builder withAccountCode(String accountCode) {
+            this.accountCode = accountCode;
+            return this;
+        }
+
+        public Builder withPassword(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder withRole(Role role) {
+            this.role = role;
+            return this;
+        }
+
+        public Account build() {
+            return new Account(name, email, jobTitle, phone, imageUrl,
+                    password, role, accountCode);
+        }
     }
 }

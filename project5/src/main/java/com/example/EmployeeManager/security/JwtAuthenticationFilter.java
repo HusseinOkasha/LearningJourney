@@ -1,6 +1,6 @@
 package com.example.EmployeeManager.security;
 
-import com.example.EmployeeManager.service.EmployeeDetailsService;
+import com.example.EmployeeManager.service.AccountDetailsService;
 import com.example.EmployeeManager.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,12 +21,12 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final EmployeeDetailsService employeeDetailsService;
+    private final AccountDetailsService accountDetailsService;
 
     @Autowired
-    public JwtAuthenticationFilter(JwtService jwtService, EmployeeDetailsService employeeDetailsService) {
+    public JwtAuthenticationFilter(JwtService jwtService, AccountDetailsService accountDetailsService) {
         this.jwtService = jwtService;
-        this.employeeDetailsService = employeeDetailsService;
+        this.accountDetailsService = accountDetailsService;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // check if the user is already authenticated.
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.employeeDetailsService.loadUserByUsername(userEmail);
+            UserDetails userDetails = this.accountDetailsService.loadUserByUsername(userEmail);
 
             if (jwtService.isTokenValid(jwtToken, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

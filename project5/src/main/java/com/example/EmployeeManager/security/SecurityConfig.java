@@ -1,7 +1,7 @@
 package com.example.EmployeeManager.security;
 
 
-import com.example.EmployeeManager.service.EmployeeDetailsService;
+import com.example.EmployeeManager.service.AccountDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,12 +26,12 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final EmployeeDetailsService employeeDetailsService;
+    private final AccountDetailsService accountDetailsService;
 
     @Autowired
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, EmployeeDetailsService employeeDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, AccountDetailsService accountDetailsService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.employeeDetailsService = employeeDetailsService;
+        this.accountDetailsService = accountDetailsService;
     }
 
     @Bean
@@ -41,7 +41,7 @@ public class SecurityConfig {
     @Bean
     AuthenticationProvider authenticationProvider(){
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setUserDetailsService(employeeDetailsService);
+        daoAuthenticationProvider.setUserDetailsService(accountDetailsService);
         daoAuthenticationProvider.setPasswordEncoder(bCryptPasswordEncoder());
         return daoAuthenticationProvider;
     }
