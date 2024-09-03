@@ -99,7 +99,7 @@ class AuthControllerTest {
         requestBody.put("email", "e2@email.com");
         requestBody.put("password", "123");
         requestBody.put("role", "ADMIN");
-        requestBody.put("name", "hussein");
+        requestBody.put("name", "Ahmed");
 
         Response response =
                 given()
@@ -119,6 +119,37 @@ class AuthControllerTest {
 
         assertThat(accessToken).isNotEmpty();
     }
+    @Test
+    public void shouldAuthenticate(){
+        /*
+            * tests that the api/auth/authenticate endpoint
+            * make sure that:
+                * the status code is 200 (OK).
+                * the response body contains jwt token.
+        */
 
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("email", "e1@email.com");
+        requestBody.put("password", "123");
 
+        Response response =
+                given()
+                        .contentType(ContentType.JSON)
+                        .auth()
+                        .preemptive()
+                        .basic("e1@email.com", "123")
+                        .when()
+                        .post("/api/auth/authenticate")
+                        .then()
+                        .statusCode(200)
+                        .body("accessToken", notNullValue())
+                        .extract()
+                        .response();
+
+        String accessToken = response
+                .jsonPath()
+                .getString("accessToken");
+
+        assertThat(accessToken).isNotEmpty();
+    }
 }
