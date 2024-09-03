@@ -3,6 +3,7 @@ package com.example.EmployeeManager.service;
 import com.example.EmployeeManager.dao.AccountRepository;
 import com.example.EmployeeManager.exception.AccountNotFoundException;
 import com.example.EmployeeManager.model.Account;
+import com.example.EmployeeManager.model.Role;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,9 @@ public class AccountService {
                                 String.format("%s%s%s", "account with id ", id, " not found")
                         )
                 );
+    }
+    public List<Account> findAllByRole(Role role){
+        return  accountRepository.findAllByRole(role);
     }
 
     public void deleteAccount(Long id) {
