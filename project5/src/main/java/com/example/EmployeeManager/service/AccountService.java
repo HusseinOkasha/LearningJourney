@@ -6,9 +6,11 @@ import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -16,14 +18,21 @@ import java.util.UUID;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Autowired
-    public AccountService(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
         this.accountRepository = accountRepository;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
     public Account addAccount(Account account) {
-        account.setAccountCode(UUID.randomUUID().toString());
+
+        // encode the raw password
+        String rawPassword = account.getPassword();
+        account.setPassword(bCryptPasswordEncoder.encode(rawPassword));
+
+        // save the account to the database.
         return accountRepository.save(account);
     }
 
@@ -47,9 +56,12 @@ public class AccountService {
     public List<Account> findAllByRole(Role role){
         return  accountRepository.findAllByRole(role);
     }
+    public Optional<Account> findByAccountCode(UUID uuid){
+        return accountRepository.findByUuid(uuid);
+    }
 
-    public void deleteAccount(Long id) {
-        accountRepository.deleteById(id);
+    public void deleteAccountByUuidAndRole(UUID uuid, Role role) {
+        accountRepository.deleteByUuidAndRole(uuid, role);
     }
 
 }

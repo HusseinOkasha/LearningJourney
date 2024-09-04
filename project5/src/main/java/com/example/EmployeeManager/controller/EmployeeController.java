@@ -1,5 +1,6 @@
 package com.example.EmployeeManager.controller;
 
+import com.example.EmployeeManager.exception.AccountNotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import com.example.EmployeeManager.service.AccountService;
@@ -7,58 +8,60 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
-@RequestMapping("/api/employee")
+@RequestMapping("/api/admin/employees")
 @RestController
 public class EmployeeController {
 
     private final AccountService accountService;
-    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Autowired
-    public EmployeeController(AccountService accountService, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public EmployeeController(AccountService accountService) {
         this.accountService = accountService;
-        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Account> addAccount(@RequestBody Account account, Authentication auth){
-        // listens to requests using Http method "POST" on path "/api/employee".
+    public ResponseEntity<Account> addEmployee(@RequestBody Account account){
+        /*
+         * listens to requests using Http method "POST" on path "/api/admin/employees".
+         * Creates accounts of role employee.
+         * returns the created account.
+         * */
 
-        // Encode the raw password.
-        String rawPassword = account.getPassword();
-        account.setPassword(bCryptPasswordEncoder.encode(rawPassword));
+        // makes sure that the account created is of type employee.
+        account.setRole(Role.EMPLOYEE);
+
         return new ResponseEntity<>(this.accountService.addAccount(account), HttpStatus.CREATED);
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<List<Account>> getAllAccounts(Authentication auth){
-        // listens to requests using Http method "GET" on path "/api/employee" .
-        return new ResponseEntity<>(this.accountService.findAllByRole(Role.USER), HttpStatus.OK);
+    public ResponseEntity<List<Account>> getAllEmployees(){
+        /*
+        * listens to requests using Http method "GET" on path "/api/admin/employee".
+        * returns all accounts of role EMPLOYEE.
+        * */
+        return new ResponseEntity<>(this.accountService.findAllByRole(Role.EMPLOYEE), HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Account> getAccountById(@PathVariable Long id ){
-        return new ResponseEntity<>(this.accountService.findAccountById(id), HttpStatus.OK);
+    @GetMapping("/{uuid}")
+    public ResponseEntity<Account> getEmployeeByUuid(@PathVariable UUID uuid ){
+        /*
+        * listens to requests using Http method "GET" on path "/api/admin/employee/{uuid}"
+        * returns the account corresponding to the specified uuid.
+        * */
+        Account account = this.accountService.findByAccountCode(uuid).orElseThrow(
+                ()-> new AccountNotFoundException("couldn't find the employee with")
+        );
+        return new ResponseEntity<>(account, HttpStatus.OK);
     }
 
-    @PutMapping
-    public ResponseEntity<Account> updateAccountById(@RequestBody Account account){
-        return new ResponseEntity<>(this.accountService.updateAccount(account), HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<?> deleteAccountById(@PathVariable Long id){
-         this.accountService.deleteAccount(id);
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<?> deleteEmployeeByUuid(@PathVariable UUID uuid){
+         this.accountService.deleteAccountByUuidAndRole(uuid, Role.EMPLOYEE);
          return new ResponseEntity<>(HttpStatus.OK);
     }
 

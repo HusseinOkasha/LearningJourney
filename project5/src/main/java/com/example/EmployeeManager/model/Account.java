@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name="account", uniqueConstraints = {
@@ -42,9 +43,8 @@ public class Account implements UserDetails {
     @Column(name ="role")
     private Role role;
 
-
-    @Column(name= "account_code", updatable = false)
-    private String accountCode;
+    @Column(name= "uuid", updatable = false)
+    private UUID uuid;
 
     private Account() {
     }
@@ -56,7 +56,7 @@ public class Account implements UserDetails {
                     String imageUrl,
                     String password,
                     Role role,
-                    String accountCode ) {
+                    UUID uuid) {
         this.name = name;
         this.email = email;
         this.jobTitle = jobTitle;
@@ -64,7 +64,7 @@ public class Account implements UserDetails {
         this.imageUrl = imageUrl;
         this.password = password;
         this.role = role;
-        this.accountCode = accountCode;
+        this.uuid = uuid;
     }
 
     public Long getId() {
@@ -127,12 +127,19 @@ public class Account implements UserDetails {
         this.imageUrl = imageUrl;
     }
 
-    public String getAccountCode() {
-        return accountCode;
+    public UUID getUuid() {
+        return uuid;
     }
 
-    public void setAccountCode(String accountCode) {
-        this.accountCode = accountCode;
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    @PrePersist
+    public void generateUuid() {
+        if (uuid == null) {
+            uuid = UUID.randomUUID();
+        }
     }
 
     public static Builder builder(){
@@ -185,7 +192,7 @@ public class Account implements UserDetails {
                 ", jobTitle='" + jobTitle + '\'' +
                 ", phone='" + phone + '\'' +
                 ", imageUrl='" + imageUrl + '\'' +
-                ", accountCode='" + accountCode + '\'' +
+                ", accountCode='" + uuid + '\'' +
                 '}';
     }
 
@@ -197,7 +204,7 @@ public class Account implements UserDetails {
         private String password;
         private String phone;
         private String imageUrl;
-        private String accountCode;
+        private UUID uuid;
         private Role role;
 
         public Builder() {
@@ -228,8 +235,8 @@ public class Account implements UserDetails {
             return this;
         }
 
-        public Builder withAccountCode(String accountCode) {
-            this.accountCode = accountCode;
+        public Builder withAccountCode(UUID uuid) {
+            this.uuid = uuid;
             return this;
         }
 
@@ -245,7 +252,7 @@ public class Account implements UserDetails {
 
         public Account build() {
             return new Account(name, email, jobTitle, phone, imageUrl,
-                    password, role, accountCode);
+                    password, role, uuid);
         }
     }
 }

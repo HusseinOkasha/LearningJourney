@@ -23,9 +23,7 @@ import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.*;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -40,14 +38,18 @@ class EmployeeControllerTest {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName("db").withUsername("myuser");
 
+    static final String authenticateUrl = "/api/auth/authenticate";
+    static final String apiUrl = "/api/admin/employees";
+
     @LocalServerPort
     private Integer port;
 
     private final AccountRepository accountRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    // sample accounts.
     private Account admin;
-    private Account user;
+    private Account employee;
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -86,16 +88,16 @@ class EmployeeControllerTest {
                 .withPassword(bCryptPasswordEncoder.encode("123"))
                 .build();
 
-        user = Account.builder()
+        employee = Account.builder()
                 .withEmail("e2@email.com")
                 .withName("ahmed")
-                .withRole(Role.USER)
+                .withRole(Role.EMPLOYEE)
                 .withPassword(bCryptPasswordEncoder.encode("123"))
                 .build();
 
         // save sample accounts to the database.
         accountRepository.save(admin);
-        accountRepository.save(user);
+        accountRepository.save(employee);
 
     }
 
@@ -106,7 +108,7 @@ class EmployeeControllerTest {
     }
 
     @Test
-    void adminShouldAddAccount() {
+    void adminShouldAddEmployee() {
         /*
          * tests that an account of role Admin can create accounts
          * tests that the response status code is 201 (created).
@@ -119,7 +121,7 @@ class EmployeeControllerTest {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("email", "e3@email.com");
         requestBody.put("password", "123");
-        requestBody.put("role", "USER");
+        requestBody.put("role", Role.EMPLOYEE);
         requestBody.put("name", "Ahmed");
 
 
@@ -128,27 +130,27 @@ class EmployeeControllerTest {
                 .body(requestBody)
                 .header("Authorization", "Bearer " + accessToken)
                 .when()
-                .post("/api/employee")
+                .post(apiUrl)
                 .then()
                 .statusCode(201);
 
     }
 
     @Test
-    void userShouldNotAddAccount(){
+    void employeeShouldNotAddEmployee(){
         /*
-        * tests that account of type user can't create accounts
+        * tests that account of role employee can't add employee account
         * test that the response code is 401 unauthorized
         * */
 
         // authenticate with account with role user.
-        String accessToken = attemptAuthenticationWith(user);
+        String accessToken = attemptAuthenticationWith(employee);
 
         // Create a map for the request body
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("email", "e3@email.com");
         requestBody.put("password", "123");
-        requestBody.put("role", "USER");
+        requestBody.put("role", Role.EMPLOYEE);
         requestBody.put("name", "Ahmed");
 
 
@@ -179,7 +181,7 @@ class EmployeeControllerTest {
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
                 .when()
-                .get("/api/employee")
+                .get(apiUrl)
                 .then()
                 .statusCode(200)
                 .body("", hasSize(1));
@@ -187,25 +189,101 @@ class EmployeeControllerTest {
     }
 
     @Test
-    void userShouldNotGetAllEmployees(){
+    void employeeShouldNotGetAllEmployees(){
         /*
-         * tests that account with role user can't get list of all employees.
+         * tests that account with role employee can't get list of all employees.
          * it also checks that the response status code is 401 Unauthorized
          * */
 
         // authenticate with account with role admin.
-        String accessToken = attemptAuthenticationWith(user);
+        String accessToken = attemptAuthenticationWith(employee);
         given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
                 .when()
-                .get("/api/employee")
+                .get(apiUrl)
                 .then()
                 .statusCode(401);
 
     }
+    @Test
+    void adminShouldGetEmployeeByUUID(){
+        /*
+        * tests that admin can get employee by the uuid.
+        * checks that the response status code is 200 OK.
+        * checks that the uuid of the returned employee is the same as the uuid sent in the path variable
+        * */
 
+        // authenticate with account with role admin.
+        String accessToken = attemptAuthenticationWith(admin);
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(apiUrl + "/" + employee.getUuid())
+                .then()
+                .statusCode(200)
+                .body("uuid", equalTo(employee.getUuid().toString()));
+    }
+    @Test
+    void employeeShouldNotGetEmployeeByUuid(){
+        /*
+         * tests that employee can't get employee by the uuid.
+         * checks that the response status code is 401 unauthorized.
+         * */
+
+        // authenticate with account with role admin.
+        String accessToken = attemptAuthenticationWith(employee);
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(apiUrl + "/" + employee.getUuid())
+                .then()
+                .statusCode(401);
+
+
+    }
+    @Test void adminShouldDeleteEmployeeByUuid(){
+        /*
+         * tests that admin can delete employee by uuid.
+         * checks that the response status code is 200 OK.
+         * */
+
+        // authenticate with account with role admin.
+        String accessToken = attemptAuthenticationWith(admin);
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(apiUrl + "/" + employee.getUuid())
+                .then()
+                .statusCode(200);
+    }
+    @Test
+    void employeeShouldNotDeleteEmployeeByUuid(){
+        /*
+         * tests that employee can't delete employee by uuid.
+         * checks that the response status code is 401 unAuthorized.
+         * */
+
+        // authenticate with account with role employee.
+        String accessToken = attemptAuthenticationWith(employee);
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(apiUrl + "/" + employee.getUuid())
+                .then()
+                .statusCode(401);
+    }
     static String attemptAuthenticationWith(Account account) {
+        /*
+        * helper method attempt authentication with the passed account.
+        * it checks that the authentication request was successful
+           * by checking that the response status code is 200 OK
+        * returns jwt token resulted from the authentication process.
+        * */
         Response response =
                 given()
                         .contentType(ContentType.JSON)
@@ -213,7 +291,7 @@ class EmployeeControllerTest {
                         .preemptive()
                         .basic(account.getEmail(), "123")
                         .when()
-                        .post("/api/auth/authenticate")
+                        .post(authenticateUrl)
                         .then()
                         .statusCode(200)
                         .body("accessToken", notNullValue())

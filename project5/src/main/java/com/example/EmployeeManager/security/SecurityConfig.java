@@ -1,6 +1,7 @@
 package com.example.EmployeeManager.security;
 
 
+import com.example.EmployeeManager.model.Role;
 import com.example.EmployeeManager.service.AccountDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +26,6 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -57,6 +57,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth->
                         auth.requestMatchers("api/auth/register/**")
                                 .permitAll()
+                )
+                .authorizeHttpRequests(auth->
+                        auth
+                                .requestMatchers("api/admin/**")
+                                .hasAuthority(Role.ADMIN.toString())
                                 .anyRequest()
                                 .authenticated()
                 )
