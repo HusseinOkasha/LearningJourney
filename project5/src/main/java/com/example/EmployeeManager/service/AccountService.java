@@ -60,6 +60,9 @@ public class AccountService {
         return accountRepository.findByUuid(uuid);
     }
 
+    public Optional<Account> findAccountByEmail(String email){
+        return accountRepository.findByEmail(email);
+    }
     public void deleteAccountByUuidAndRole(UUID uuid, Role role) {
         accountRepository.deleteByUuidAndRole(uuid, role);
     }
