@@ -56,7 +56,7 @@ public class AccountService {
     public List<Account> findAllByRole(Role role){
         return  accountRepository.findAllByRole(role);
     }
-    public Optional<Account> findByAccountCode(UUID uuid){
+    public Optional<Account> findByUuid(UUID uuid){
         return accountRepository.findByUuid(uuid);
     }
 

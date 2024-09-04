@@ -53,7 +53,7 @@ public class EmployeeController {
         * listens to requests using Http method "GET" on path "/api/admin/employee/{uuid}"
         * returns the account corresponding to the specified uuid.
         * */
-        Account account = this.accountService.findByAccountCode(uuid).orElseThrow(
+        Account account = this.accountService.findByUuid(uuid).orElseThrow(
                 ()-> new AccountNotFoundException("couldn't find the employee with")
         );
         return new ResponseEntity<>(account, HttpStatus.OK);
