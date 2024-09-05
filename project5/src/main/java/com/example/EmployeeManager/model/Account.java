@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -45,6 +46,14 @@ public class Account implements UserDetails {
 
     @Column(name= "uuid", updatable = false)
     private UUID uuid;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_tasks", // Name of the join table
+            joinColumns = @JoinColumn(name = "employee_id"), // Foreign key for employee
+            inverseJoinColumns = @JoinColumn(name = "task_id") // Foreign key for task
+    )
+    private Set<Task> tasks;
 
     private Account() {
     }
@@ -133,6 +142,14 @@ public class Account implements UserDetails {
 
     public void setUuid(UUID uuid) {
         this.uuid = uuid;
+    }
+
+    public Set<Task> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(Set<Task> tasks) {
+        this.tasks = tasks;
     }
 
     @PrePersist
