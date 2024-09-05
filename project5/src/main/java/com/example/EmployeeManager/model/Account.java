@@ -24,7 +24,7 @@ public class Account implements UserDetails {
     @Column(name="name")
     private String name;
 
-    @Column(name="email")
+    @Column(name="email", nullable = false)
     private String email;
 
     @Column(name="job_title")
