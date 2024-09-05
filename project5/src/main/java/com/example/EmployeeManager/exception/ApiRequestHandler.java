@@ -1,9 +1,12 @@
 package com.example.EmployeeManager.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -20,8 +23,25 @@ public class ApiRequestHandler {
     }
 
     @ExceptionHandler(value = {AccountNotFoundException.class})
-    public ResponseEntity<Object> handleApiRequestException(AccountNotFoundException e) {
+    public ResponseEntity<Object> handleAccountNotFoundException(AccountNotFoundException e) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
+                e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
+        );
+        return new ResponseEntity<>(apiExceptionDto, httpStatus);
+    }
+
+    @ExceptionHandler(value = {MethodArgumentNotValidException.class})
+    public ResponseEntity<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
+                e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
+        );
+        return new ResponseEntity<>(apiExceptionDto, httpStatus);
+    }
+    @ExceptionHandler(value = {DataIntegrityViolationException.class})
+    public ResponseEntity<Object> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        HttpStatus httpStatus = HttpStatus.CONFLICT;
         ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
                 e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
         );

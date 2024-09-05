@@ -1,12 +1,18 @@
 package com.example.EmployeeManager.controller;
 
 
+import com.example.EmployeeManager.dto.AddAccountRequest;
+
 import com.example.EmployeeManager.exception.AccountNotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import com.example.EmployeeManager.service.AccountService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,16 +28,25 @@ public class AdminController {
         this.accountService = accountService;
     }
 
+    @Validated
     @PostMapping
-    public ResponseEntity<Account> addAdminAccount(@RequestBody Account account){
+    public ResponseEntity<Account> addAdminAccount( @Valid @RequestBody AddAccountRequest request){
         /*
          * listens to requests using Http method "POST" on path "/api/admin".
          * Creates accounts of role Admin.
          * returns the created account.
          * */
 
-        // makes sure that the account created is of type admin.
-        account.setRole(Role.ADMIN);
+
+        // create account from request.
+        Account account = Account.builder()
+                .withEmail(request.email())
+                .withPassword(request.password())
+                .withJobTitle(request.jobTitle())
+                .withName(request.name())
+                .withPhone(request.phone())
+                .withRole(Role.ADMIN)
+                .build();
 
         return new ResponseEntity<>(this.accountService.addAccount(account), HttpStatus.CREATED);
     }
@@ -44,13 +59,14 @@ public class AdminController {
          * */
         return new ResponseEntity<>(this.accountService.findAllByRole(Role.ADMIN), HttpStatus.OK);
     }
-
+    @Validated
     @GetMapping("/{uuid}")
-    public ResponseEntity<Account> getAdminByUuid(@PathVariable UUID uuid ){
+    public ResponseEntity<Account> getAdminByUuid( @PathVariable UUID uuid ){
         /*
          * listens to requests using Http method "GET" on path "/api/admin/{uuid}"
          * returns the account corresponding to the specified uuid.
          * */
+
         Account account = this.accountService.findByUuid(uuid).orElseThrow(
                 ()-> new AccountNotFoundException("couldn't find the employee with")
         );

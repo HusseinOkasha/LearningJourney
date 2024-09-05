@@ -4,8 +4,10 @@ import com.example.EmployeeManager.dto.AuthenticationRequest;
 import com.example.EmployeeManager.dto.AuthenticationResponse;
 import com.example.EmployeeManager.dto.RegisterRequest;
 import com.example.EmployeeManager.service.AuthenticationService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,11 +23,9 @@ public class Auth {
     public Auth(AuthenticationService authenticationService) {
         this.authenticationService = authenticationService;
     }
-
+    @Validated
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(
-            @RequestBody RegisterRequest request
-    ) {
+    public ResponseEntity<AuthenticationResponse> register(@RequestBody @Valid RegisterRequest request) {
         return ResponseEntity.ok(authenticationService.register(request));
     }
 

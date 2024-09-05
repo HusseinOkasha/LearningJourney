@@ -1,11 +1,13 @@
 package com.example.EmployeeManager.dto;
 
 import com.example.EmployeeManager.model.Role;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 
 public record RegisterRequest(String name,
-                              String email,
-                              String password,
+                              @NotNull @Email String email,
+                              @NotNull String password,
                               String jobTitle,
                               String phone,
-                              Role role) {
+                              @NotNull  Role role) {
 }

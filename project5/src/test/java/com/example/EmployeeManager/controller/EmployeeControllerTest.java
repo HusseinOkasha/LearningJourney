@@ -135,6 +135,60 @@ class EmployeeControllerTest {
                 .statusCode(201);
 
     }
+    @Test
+    void adminShouldNotAddEmployeeWithoutPassword() {
+        /*
+         * tests that an account of role Admin can't  create  employee account without password.
+         * tests that the response status code is 400 (BAD_REQUEST).
+         */
+
+        // authenticate with admin account.
+        String accessToken = attemptAuthenticationWith(admin);
+
+        // Create a map for the request body
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("email", "e3@email.com");
+        requestBody.put("role", Role.EMPLOYEE);
+        requestBody.put("name", "Ahmed");
+
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .post(apiUrl)
+                .then()
+                .statusCode(400);
+
+    }
+
+    @Test
+    void adminShouldNotAddEmployeeWithoutEmail() {
+        /*
+         * tests that an account of role Admin can't create employee account without email
+         * tests that the response status code is 400 (BAD_REQUEST).
+         */
+
+        // authenticate with admin account.
+        String accessToken = attemptAuthenticationWith(admin);
+
+        // Create a map for the request body
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("password", "123");
+        requestBody.put("role", Role.EMPLOYEE);
+        requestBody.put("name", "Ahmed");
+
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .post(apiUrl)
+                .then()
+                .statusCode(400);
+    }
 
     @Test
     void employeeShouldNotAddEmployee(){

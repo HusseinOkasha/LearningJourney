@@ -135,6 +135,90 @@ class AdminControllerTest {
                 .statusCode(201);
 
     }
+    @Test
+    void adminShouldNotAddAdminWithoutEmail() {
+        /*
+         * tests that an account of role Admin can not create admin account without adding the email in the request body
+         * tests that the response status code is 400 (BAD_REQUEST).
+         */
+
+        // authenticate with admin account.
+        String accessToken = attemptAuthenticationWith(admin);
+
+        // Create a map for the request body
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("password", "123");
+        requestBody.put("role", Role.ADMIN);
+        requestBody.put("name", "Ahmed");
+
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .post(apiUrl)
+                .then()
+                .statusCode(400);
+
+    }
+    @Test
+    void adminShouldNotAddAdminWithoutPassword() {
+        /*
+         * tests that an account of role Admin can not create admin account without adding the password in the request body
+         * tests that the response status code is 400 (BAD_REQUEST).
+         */
+
+        // authenticate with admin account.
+        String accessToken = attemptAuthenticationWith(admin);
+
+        // Create a map for the request body
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("email", "e3@email.com");
+        requestBody.put("role", Role.ADMIN);
+        requestBody.put("name", "Ahmed");
+
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .post(apiUrl)
+                .then()
+                .statusCode(400);
+
+    }
+    @Test
+    void adminShouldNotAddAdminWithDuplicateEmail() {
+        /*
+         * tests that an account of role Admin can not create admin account with duplicate email in the request body
+         * tests that the response status code is 409 (CONFLICT).
+         */
+
+        // authenticate with admin account.
+        String accessToken = attemptAuthenticationWith(admin);
+
+        // Create a map for the request body
+        Map<String, Object> requestBody = new HashMap<>();
+
+        requestBody.put("email", admin.getEmail());// admin is an admin account in the database
+        requestBody.put("password", "123");
+        requestBody.put("role", Role.ADMIN);
+        requestBody.put("name", "Ahmed");
+
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .post(apiUrl)
+                .then()
+                .statusCode(409);
+
+    }
+
 
     @Test
     void employeeShouldNotAddAdmin(){

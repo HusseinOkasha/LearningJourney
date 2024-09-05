@@ -1,9 +1,11 @@
 package com.example.EmployeeManager.controller;
 
+import com.example.EmployeeManager.dto.AddAccountRequest;
 import com.example.EmployeeManager.exception.AccountNotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import com.example.EmployeeManager.service.AccountService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpStatus;
@@ -25,7 +27,7 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ResponseEntity<Account> addEmployee(@RequestBody Account account){
+    public ResponseEntity<Account> addEmployee(@Valid  @RequestBody AddAccountRequest request){
         /*
          * listens to requests using Http method "POST" on path "/api/admin/employees".
          * Creates accounts of role employee.
@@ -33,8 +35,15 @@ public class EmployeeController {
          * */
 
         // makes sure that the account created is of type employee.
-        account.setRole(Role.EMPLOYEE);
-
+        // create account from request.
+        Account account = Account.builder()
+                .withEmail(request.email())
+                .withPassword(request.password())
+                .withJobTitle(request.jobTitle())
+                .withName(request.name())
+                .withPhone(request.phone())
+                .withRole(Role.EMPLOYEE)
+                .build();
         return new ResponseEntity<>(this.accountService.addAccount(account), HttpStatus.CREATED);
     }
 
