@@ -18,6 +18,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -146,6 +149,60 @@ class ProfileControllerTest {
                 .then()
                 .statusCode(200)
                 .body("uuid", equalTo(employee.getUuid().toString()));
+
+    }
+
+    @Test
+    void adminShouldUpdateHisProfile(){
+        /*
+         * tests that admin can update his profile.
+         * it also checks that the response status code is 200 OK
+         * */
+
+        // authenticate with account with role admin.
+        String accessToken = attemptAuthenticationWith(admin);
+
+        // Create a map for the request body
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("name", "Updated name" );
+        requestBody.put("phone", "123456" );
+        requestBody.put("job_title", "manager" );
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .get(apiUrl)
+                .then()
+                .statusCode(200);
+
+    }
+    @Test
+    void employeeShouldUpdateHisProfile(){
+        /*
+         * tests that admin can update his profile.
+         * it also checks that the response status code is 200 OK
+         *
+         * */
+
+        // authenticate with account with role admin.
+        String accessToken = attemptAuthenticationWith(employee);
+
+        // Create a map for the request body
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("name", "Updated name" );
+        requestBody.put("phone", "123456" );
+        requestBody.put("job_title", "doctor" );
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .get(apiUrl)
+                .then()
+                .statusCode(200);
 
     }
 
