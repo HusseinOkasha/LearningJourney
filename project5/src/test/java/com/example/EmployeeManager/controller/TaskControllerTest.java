@@ -4,7 +4,10 @@ import com.example.EmployeeManager.dao.AccountRepository;
 import com.example.EmployeeManager.dto.TaskDto;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
+import com.example.EmployeeManager.model.Task;
 import com.example.EmployeeManager.model.TaskStatus;
+import com.example.EmployeeManager.service.AccountService;
+import com.example.EmployeeManager.service.TaskService;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -54,13 +57,22 @@ class TaskControllerTest {
     private Account admin;
     private Account employee;
 
-    private final AccountRepository accountRepository;
+    // sample task.
+    private Task task;
+
+    private final AccountService accountService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final TaskService taskService;
 
     @Autowired
-    TaskControllerTest(AccountRepository accountRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
-        this.accountRepository = accountRepository;
+    TaskControllerTest(
+                       AccountService accountService,
+                       BCryptPasswordEncoder bCryptPasswordEncoder,
+                       TaskService taskService
+    ) {
+        this.accountService = accountService;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.taskService = taskService;
     }
 
     @DynamicPropertySource
@@ -93,6 +105,7 @@ class TaskControllerTest {
                 .withPassword(bCryptPasswordEncoder.encode("123"))
                 .build();
 
+
         employee = Account.builder()
                 .withEmail("e2@email.com")
                 .withName("ahmed")
@@ -100,15 +113,32 @@ class TaskControllerTest {
                 .withPassword(bCryptPasswordEncoder.encode("123"))
                 .build();
 
+        // create sample task.
+        task = Task
+                .builder()
+                .withTitle("fix an github issue")
+                .withStatus(TaskStatus.TODO)
+                .withDescription(" description")
+                .build();
+
+
+
+        // save the sample task in the database.
+        taskService.save(task);
+
+        // add sample task to both employee and admin
+        admin.getTasks().add(task);
+        employee.getTasks().add(task);
+
         // save sample accounts to the database.
-        accountRepository.save(admin);
-        accountRepository.save(employee);
+        accountService.save(admin);
+        accountService.save(employee);
 
     }
 
     @AfterEach
     void tearDown() {
-        accountRepository.deleteAll();
+        accountService.deleteAll();
 
     }
 
@@ -158,6 +188,27 @@ class TaskControllerTest {
                 .then()
                 .statusCode(HttpStatus.CREATED.value());
     }
+    @Test
+    public void adminShouldGetAllHisTasks(){
+        /*
+         * tests that an account of role admin get all his tasks.
+         * tests that the response status code is 200 (OK).
+         *
+         *
+         * */
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = attemptAuthenticationWith(admin);
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(apiUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+    }
+
 
     static String attemptAuthenticationWith(Account account) {
         /*

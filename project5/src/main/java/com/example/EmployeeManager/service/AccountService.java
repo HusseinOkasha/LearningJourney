@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -55,6 +56,12 @@ public class AccountService {
     }
     public List<Account> findAllByRole(Role role){
         return  accountRepository.findAllByRole(role);
+    }
+    public Account save(Account account){
+        return this.accountRepository.save(account);
+    }
+    public void deleteAll(){
+        accountRepository.deleteAll();
     }
     public Optional<Account> findByUuid(UUID uuid){
         return accountRepository.findByUuid(uuid);

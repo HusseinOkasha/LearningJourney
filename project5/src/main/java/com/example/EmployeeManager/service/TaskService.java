@@ -15,45 +15,38 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
 @Service
 public class TaskService {
 
     @Autowired
-    private final AccountRepository accountRepository;
+    private final AccountService accountService;
     @Autowired
     private final TaskRepository taskRepository;
 
-    public TaskService(AccountRepository accountRepository, TaskRepository taskRepository) {
-        this.accountRepository = accountRepository;
+    public TaskService(AccountService accountService, TaskRepository taskRepository) {
+        this.accountService = accountService;
         this.taskRepository = taskRepository;
     }
 
-    public void addTaskToAccount(TaskDto taskDto){
-        // extract the authentication object.
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // build task object.
-        Task task = Task.builder()
-                .withDescription(taskDto.description())
-                .withStatus(taskDto.status())
-                .withTitle(taskDto.title())
-                .build();
-
-        // Save the task to the database.
-        taskRepository.save(task);
-
-        // Extract the email from the authentication object.
-        String email = authentication.getName();
-
-        // fetch the account from the database.
-        Account account = accountRepository
-                .findByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException("couldn't find account with email: " + email));
-
-        // add task to the account.
-        account.getTasks().add(task);
-
-        // save changes to account to the database.
-        accountRepository.save(account);
+    public Optional<Task> findTaskByUuid(UUID uuid) {
+        return this.taskRepository.findByUuid(uuid);
     }
+
+    public List<Task> findAll() {
+        return taskRepository.findAll();
+    }
+
+    public Task save(Task task) {
+        return this.taskRepository.save(task);
+    }
+
+    public void deleteTaskByUuid(UUID uuid) {
+        taskRepository.deleteByUuid(uuid);
+    }
+
 }

@@ -6,13 +6,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
-@Table(name="account", uniqueConstraints = {
+@Table(name = "account", uniqueConstraints = {
         @UniqueConstraint(columnNames = "email")
 })
 public class Account implements UserDetails {
@@ -22,29 +19,29 @@ public class Account implements UserDetails {
     @Column(nullable = false, updatable = false)
     private Long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="email", nullable = false)
+    @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name="job_title")
+    @Column(name = "job_title")
     private String jobTitle;
 
-    @Column(name= "phone")
+    @Column(name = "phone")
     private String phone;
 
     @Column(name = "image_url")
     private String imageUrl;
 
-    @Column(name = "password")
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(name ="role")
+    @Column(name = "role", nullable = false)
     private Role role;
 
-    @Column(name= "uuid", updatable = false)
+    @Column(name = "uuid", updatable = false)
     private UUID uuid;
 
     @ManyToMany
@@ -55,25 +52,20 @@ public class Account implements UserDetails {
     )
     private Set<Task> tasks;
 
-    private Account() {
+    public Account() {
     }
 
-    private Account(String name,
-                    String email,
-                    String jobTitle,
-                    String phone,
-                    String imageUrl,
-                    String password,
-                    Role role,
-                    UUID uuid) {
-        this.name = name;
-        this.email = email;
-        this.jobTitle = jobTitle;
-        this.phone = phone;
-        this.imageUrl = imageUrl;
-        this.password = password;
-        this.role = role;
-        this.uuid = uuid;
+    private Account(Builder builder) {
+        this.email = builder.email;
+        this.password = builder.password;
+        this.role = builder.role;
+        this.uuid = builder.uuid;
+
+        this.name = builder.name;
+        this.jobTitle = builder.jobTitle;
+        this.phone = builder.phone;
+        this.imageUrl = builder.imageUrl;
+        this.tasks = builder.tasks;
     }
 
     public Long getId() {
@@ -159,7 +151,7 @@ public class Account implements UserDetails {
         }
     }
 
-    public static Builder builder(){
+    public static Builder builder() {
         // creates and returns an instance of Account.Builder.
         return new Builder();
     }
@@ -215,25 +207,46 @@ public class Account implements UserDetails {
 
     public static class Builder {
 
-        private String name;
+        // optional fields (nullable)
+        private String name = "";
+        private String phone = "";
+        private String imageUrl = "";
+        private String jobTitle = "";
+        private Set<Task> tasks = new HashSet<>();
+
+        // required fields
         private String email;
-        private String jobTitle;
         private String password;
-        private String phone;
-        private String imageUrl;
         private UUID uuid;
         private Role role;
 
         public Builder() {
         }
 
-        public Builder withName(String name) {
-            this.name = name;
-            return this;
-        }
 
         public Builder withEmail(String email) {
             this.email = email;
+            return this;
+        }
+
+        public Builder withPassword(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder withUuid(UUID uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+
+        public Builder withRole(Role role) {
+            this.role = role;
+            return this;
+        }
+
+        public Builder withName(String name) {
+            this.name = name;
             return this;
         }
 
@@ -252,24 +265,13 @@ public class Account implements UserDetails {
             return this;
         }
 
-        public Builder withAccountCode(UUID uuid) {
-            this.uuid = uuid;
-            return this;
-        }
-
-        public Builder withPassword(String password) {
-            this.password = password;
-            return this;
-        }
-
-        public Builder withRole(Role role) {
-            this.role = role;
+        public Builder withTasks(Set<Task> tasks){
+            this.tasks = tasks;
             return this;
         }
 
         public Account build() {
-            return new Account(name, email, jobTitle, phone, imageUrl,
-                    password, role, uuid);
+            return new Account(this);
         }
     }
 }
