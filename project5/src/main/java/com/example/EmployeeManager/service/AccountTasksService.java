@@ -14,25 +14,17 @@ import java.util.UUID;
 public class AccountTasksService {
     private final AccountService accountService;
     private final TaskService taskService;
+    private final AuthenticationService authenticationService;
 
-    public AccountTasksService(AccountService accountService, TaskService taskService) {
+    public AccountTasksService(AccountService accountService, TaskService taskService, AuthenticationService authenticationService) {
         this.accountService = accountService;
         this.taskService = taskService;
+        this.authenticationService = authenticationService;
     }
 
     public Set<Task> getMyTasks() {
-        // extract the authentication object.
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // extract the email of the authenticated ADMIN / EMPLOYEE from the authentication object.
-        String email = authentication.getName();
-
-        //fetch the account corspending to the extracted email.
-        Account account = accountService
-                .findAccountByEmail(email)
-                .orElseThrow(
-                        () -> new NotFoundException("couldn't find account with email: " + email)
-                );
+        // fetch the account of the authenticated ADMIN / EMPLOYEE.
+        Account account = authenticationService.getAuthenticatedAccount();
 
         // get the tasks.
         return account.getTasks();
@@ -45,18 +37,8 @@ public class AccountTasksService {
          * It adds a task to the account of the authenticated (employee / admin).
          * */
 
-        // extract the authentication object.
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // extract the user email from the authentication object.
-        String email = authentication.getName();
-
-        // fetch the account from the database.
-        Account account = accountService
-                .findAccountByEmail(email)
-                .orElseThrow(
-                        () -> new NotFoundException("couldn't find account with email: " + email)
-                );
+        // fetch the account of the authenticated ADMIN / EMPLOYEE.
+        Account account = authenticationService.getAuthenticatedAccount();
 
         // Save the task to the database.
         task = taskService.save(task);
@@ -76,24 +58,13 @@ public class AccountTasksService {
         * It returns the task after applying the update on it.
         * */
 
-        // extract the authentication object.
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // extract the email of the authenticated ADMIN / EMPLOYEE from the authentication object.
-        String email = authentication.getName();
-
-        // fetch the account of the authenticated ADMIN / EMPLOYEE from the database.
-        Account account = accountService
-                .findAccountByEmail(email)
-                .orElseThrow(
-                        ()-> new NotFoundException("Couldn't find account with email: " + email)
-                );
-
+        // fetch the account of the authenticated ADMIN / EMPLOYEE.
+        Account account = authenticationService.getAuthenticatedAccount();
 
         // fetch the task we want to update from the database.
         Task dbTask = taskService
                 .findTaskByUuidAndAccount(uuid, account)
-                .orElseThrow(()-> new NotFoundException("couldn't find account with email: " + email));
+                .orElseThrow(()-> new NotFoundException("couldn't find task with uuid: " + uuid));
 
         // update the title.
         dbTask.setTitle(title);

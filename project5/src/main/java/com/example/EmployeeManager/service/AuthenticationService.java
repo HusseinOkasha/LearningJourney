@@ -1,14 +1,12 @@
 package com.example.EmployeeManager.service;
 
-import com.example.EmployeeManager.dao.AccountRepository;
-import com.example.EmployeeManager.dto.AuthenticationRequest;
 import com.example.EmployeeManager.dto.AuthenticationResponse;
 import com.example.EmployeeManager.dto.RegisterRequest;
+import com.example.EmployeeManager.exception.NotFoundException;
 import com.example.EmployeeManager.model.Account;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,17 +20,17 @@ public class AuthenticationService {
 
 
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-    private final AccountRepository accountRepository;
+    private final AccountService accountService;
     private final JwtService jwtService;
 
 
     @Autowired
     public AuthenticationService(BCryptPasswordEncoder bCryptPasswordEncoder,
-                                 AccountRepository accountRepository,
+                                 AccountService accountService,
                                  JwtService jwtService
     ) {
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
-        this.accountRepository = accountRepository;
+        this.accountService = accountService;
         this.jwtService = jwtService;
     }
 
@@ -47,7 +45,7 @@ public class AuthenticationService {
                 .withRole(request.role())
                 .build();
 
-        Account savedAccount = accountRepository.save(account);
+        Account savedAccount = accountService.save(account);
 
 
         String jwtToken = jwtService.generateToken(null, account.getEmail());
@@ -63,5 +61,22 @@ public class AuthenticationService {
                         auth.getName()
                 )
         );
+    }
+
+    public Account getAuthenticatedAccount(){
+        /*
+        * It returns the currently authenticated (ADMIN / EMPLOYEE) accounts'.
+        * */
+
+        // fetch the authentication object.
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // extract the email from the authentication object.
+        String email = authentication.getName();
+
+        // fetch the account corresponding to the extracted email
+        return  accountService
+                .findAccountByEmail(email)
+                .orElseThrow(()-> new NotFoundException("couldn't find account with email: " + email));
     }
 }
