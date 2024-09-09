@@ -62,8 +62,12 @@ public class AccountService {
     public void deleteAll(){
         accountRepository.deleteAll();
     }
-    public Optional<Account> findByUuid(UUID uuid){
-        return accountRepository.findByUuid(uuid);
+    public Account findByUuid(UUID uuid){
+        return accountRepository
+                .findByUuid(uuid)
+                .orElseThrow(
+                        () -> new NotFoundException("Couldn't find an account with uuid: "+ uuid )
+                );
     }
 
     public Optional<Account> findAccountByEmail(String email){

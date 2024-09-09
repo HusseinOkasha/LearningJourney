@@ -7,6 +7,7 @@ import com.example.EmployeeManager.exception.NotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import com.example.EmployeeManager.service.AccountService;
+import com.example.EmployeeManager.util.entityAndDtoMappers.AccountMapper;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,14 +38,7 @@ public class AdminController {
 
 
         // create account from request.
-        Account account = Account.builder()
-                .withEmail(request.email())
-                .withPassword(request.password())
-                .withJobTitle(request.jobTitle())
-                .withName(request.name())
-                .withPhone(request.phone())
-                .withRole(Role.ADMIN)
-                .build();
+        Account account = AccountMapper.addAccountRequestToAccountEntity(request);
 
         return new ResponseEntity<>(this.accountService.addAccount(account), HttpStatus.CREATED);
     }
@@ -65,9 +59,7 @@ public class AdminController {
          * returns the account corresponding to the specified uuid.
          * */
 
-        Account account = this.accountService.findByUuid(uuid).orElseThrow(
-                ()-> new NotFoundException("couldn't find the employee with")
-        );
+        Account account = this.accountService.findByUuid(uuid);
         return new ResponseEntity<>(account, HttpStatus.OK);
     }
 
