@@ -1,7 +1,7 @@
 package com.example.EmployeeManager.service;
 
 import com.example.EmployeeManager.dao.AccountRepository;
-import com.example.EmployeeManager.exception.AccountNotFoundException;
+import com.example.EmployeeManager.exception.NotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import jakarta.transaction.Transactional;
@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -49,7 +48,7 @@ public class AccountService {
         return accountRepository
                 .findById(id)
                 .orElseThrow(
-                        () -> new AccountNotFoundException(
+                        () -> new NotFoundException(
                                 String.format("%s%s%s", "account with id ", id, " not found")
                         )
                 );

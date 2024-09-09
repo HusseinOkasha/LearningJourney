@@ -2,6 +2,7 @@ package com.example.EmployeeManager.controller;
 
 import com.example.EmployeeManager.dao.AccountRepository;
 import com.example.EmployeeManager.dto.TaskDto;
+import com.example.EmployeeManager.dto.UpdateTitleRequest;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import com.example.EmployeeManager.model.Task;
@@ -160,6 +161,8 @@ class TaskControllerTest {
         // taskDto for the task to be created.
         TaskDto taskDto = new TaskDto("this is an important task","task 1", TaskStatus.TODO );
 
+
+
         given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
@@ -211,6 +214,70 @@ class TaskControllerTest {
                 .get(apiUrl)
                 .then()
                 .statusCode(HttpStatus.OK.value());
+    }
+
+    @Test
+    void adminShouldUpdateTaskTitleByUuid(){
+        /*
+        * it tests that admin can update his tasks title by uuid.
+        * it checks that the response status code is 200 (OK).
+        * it checks that the returned task has the same title as one provided in the update request.
+        * */
+
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // value of new title.
+        final String newTitle = "new title";
+
+        // request body.
+        Map<String, String> requestBody = Map.of("title", newTitle);
+
+        // construct the url for update title endpoint.
+        String fullUrl = String.format("%s/%s/title", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("title", equalTo(newTitle));
+    }
+
+    @Test
+    void employeeShouldUpdateTaskTitleByUuid(){
+        /*
+        * it tests that employee can update his tasks title by uuid.
+        * it checks that the response status code is 200 (OK).
+        * it checks that the returned task has the same title as one provided in the update request.
+        * */
+
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        // value of new title.
+        final String newTitle = "new title";
+
+        // request body.
+        Map<String, String> requestBody = Map.of("title", newTitle);
+
+        // construct the url for update title endpoint.
+        String fullUrl = String.format("%s/%s/title", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("title", equalTo(newTitle));
     }
 
 

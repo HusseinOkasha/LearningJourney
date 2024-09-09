@@ -47,7 +47,7 @@ public class Account implements UserDetails {
     @ManyToMany
     @JoinTable(
             name = "user_tasks", // Name of the join table
-            joinColumns = @JoinColumn(name = "employee_id"), // Foreign key for employee
+            joinColumns = @JoinColumn(name = "account_id"), // Foreign key for account
             inverseJoinColumns = @JoinColumn(name = "task_id") // Foreign key for task
     )
     private Set<Task> tasks;

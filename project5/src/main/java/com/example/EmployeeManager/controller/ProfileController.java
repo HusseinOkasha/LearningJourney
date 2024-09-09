@@ -2,7 +2,7 @@ package com.example.EmployeeManager.controller;
 
 
 import com.example.EmployeeManager.dto.UpdateAccountDto;
-import com.example.EmployeeManager.exception.AccountNotFoundException;
+import com.example.EmployeeManager.exception.NotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.service.AccountService;
 import jakarta.validation.Valid;
@@ -29,7 +29,7 @@ public class ProfileController {
         return new ResponseEntity<>(
                 accountService
                         .findAccountByEmail(email)
-                        .orElseThrow(()->new AccountNotFoundException("couldn't find account with email " + email)
+                        .orElseThrow(()->new NotFoundException("couldn't find account with email " + email)
                         ),
                 HttpStatus.OK);
     }
@@ -39,7 +39,7 @@ public class ProfileController {
         String email = authentication.getName();
         Account account = accountService
                 .findAccountByEmail(email)
-                .orElseThrow(()->new AccountNotFoundException("couldn't find account with email " + email)
+                .orElseThrow(()->new NotFoundException("couldn't find account with email " + email)
                 );
         account.setName(updateAccountDto.name());
         account.setJobTitle(updateAccountDto.jobTitle());
@@ -47,7 +47,7 @@ public class ProfileController {
         return new ResponseEntity<>(
                 accountService
                         .findAccountByEmail(email)
-                        .orElseThrow(()->new AccountNotFoundException("couldn't find account with email " + email)
+                        .orElseThrow(()->new NotFoundException("couldn't find account with email " + email)
                         ),
                 HttpStatus.OK);
     }

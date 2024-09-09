@@ -1,7 +1,7 @@
 package com.example.EmployeeManager.controller;
 
 import com.example.EmployeeManager.dto.AddAccountRequest;
-import com.example.EmployeeManager.exception.AccountNotFoundException;
+import com.example.EmployeeManager.exception.NotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import com.example.EmployeeManager.service.AccountService;
@@ -63,7 +63,7 @@ public class EmployeeController {
         * returns the account corresponding to the specified uuid.
         * */
         Account account = this.accountService.findByUuid(uuid).orElseThrow(
-                ()-> new AccountNotFoundException("couldn't find the employee with")
+                ()-> new NotFoundException("couldn't find the employee with")
         );
         return new ResponseEntity<>(account, HttpStatus.OK);
     }

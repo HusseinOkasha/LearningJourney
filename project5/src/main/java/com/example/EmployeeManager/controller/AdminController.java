@@ -3,13 +3,11 @@ package com.example.EmployeeManager.controller;
 
 import com.example.EmployeeManager.dto.AddAccountRequest;
 
-import com.example.EmployeeManager.exception.AccountNotFoundException;
+import com.example.EmployeeManager.exception.NotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Role;
 import com.example.EmployeeManager.service.AccountService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -68,7 +66,7 @@ public class AdminController {
          * */
 
         Account account = this.accountService.findByUuid(uuid).orElseThrow(
-                ()-> new AccountNotFoundException("couldn't find the employee with")
+                ()-> new NotFoundException("couldn't find the employee with")
         );
         return new ResponseEntity<>(account, HttpStatus.OK);
     }

@@ -2,23 +2,18 @@ package com.example.EmployeeManager.controller;
 
 
 import com.example.EmployeeManager.dto.TaskDto;
-import com.example.EmployeeManager.exception.AccountNotFoundException;
-import com.example.EmployeeManager.model.Account;
+import com.example.EmployeeManager.dto.UpdateTitleRequest;
 import com.example.EmployeeManager.model.Task;
-import com.example.EmployeeManager.service.AccountService;
 import com.example.EmployeeManager.service.AccountTasksService;
-import com.example.EmployeeManager.service.TaskService;
 import com.example.EmployeeManager.util.entityAndDtoMappers.TaskMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -55,4 +50,10 @@ public class TaskController {
                 HttpStatus.OK);
     }
 
+    @PatchMapping("/{uuid}/title")
+    public ResponseEntity<TaskDto> UpdateTaskTitleByUuid(@PathVariable UUID uuid, @RequestBody @Valid  UpdateTitleRequest request){
+        return new ResponseEntity<>(
+                TaskMapper.taskEntityToTaskDto(accountTasksService.updateMyTaskTitleByUuid(uuid, request.title())),
+                HttpStatus.OK);
+    }
 }

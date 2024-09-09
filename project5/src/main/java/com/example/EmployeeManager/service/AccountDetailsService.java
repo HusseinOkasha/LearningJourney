@@ -2,7 +2,7 @@ package com.example.EmployeeManager.service;
 
 
 import com.example.EmployeeManager.dao.AccountRepository;
-import com.example.EmployeeManager.exception.AccountNotFoundException;
+import com.example.EmployeeManager.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,7 +21,7 @@ public class AccountDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return accountRepository.findByEmail(username).orElseThrow(()-> new AccountNotFoundException("" +
+        return accountRepository.findByEmail(username).orElseThrow(()-> new NotFoundException("" +
                 "Couldn't find account with email: " + username)
         );
     }

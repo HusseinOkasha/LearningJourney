@@ -22,8 +22,8 @@ public class ApiRequestHandler {
         return new ResponseEntity<>(apiExceptionDto, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(value = {AccountNotFoundException.class})
-    public ResponseEntity<Object> handleAccountNotFoundException(AccountNotFoundException e) {
+    @ExceptionHandler(value = {NotFoundException.class})
+    public ResponseEntity<Object> handleAccountNotFoundException(NotFoundException e) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
         ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
                 e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
