@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -33,6 +34,7 @@ import static org.hamcrest.Matchers.*;
 // to make sure that spring boot doesn't override the configuration and creates h2 database or any other in memory
 // database.
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
 class EmployeeControllerTest {
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
@@ -46,6 +48,7 @@ class EmployeeControllerTest {
 
     private final AccountRepository accountRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final Util util;
 
     // sample accounts.
     private Account admin;
@@ -59,9 +62,10 @@ class EmployeeControllerTest {
     }
 
     @Autowired
-    EmployeeControllerTest(AccountRepository accountRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    EmployeeControllerTest(AccountRepository accountRepository, BCryptPasswordEncoder bCryptPasswordEncoder, Util util) {
         this.accountRepository = accountRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.util = util;
     }
 
     @BeforeAll
@@ -115,7 +119,7 @@ class EmployeeControllerTest {
          */
 
         // authenticate with admin account.
-        String accessToken = attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
 
         // Create a map for the request body
         Map<String, Object> requestBody = new HashMap<>();
@@ -143,7 +147,7 @@ class EmployeeControllerTest {
          */
 
         // authenticate with admin account.
-        String accessToken = attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
 
         // Create a map for the request body
         Map<String, Object> requestBody = new HashMap<>();
@@ -171,7 +175,7 @@ class EmployeeControllerTest {
          */
 
         // authenticate with admin account.
-        String accessToken = attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
 
         // Create a map for the request body
         Map<String, Object> requestBody = new HashMap<>();
@@ -198,7 +202,7 @@ class EmployeeControllerTest {
         * */
 
         // authenticate with account with role user.
-        String accessToken = attemptAuthenticationWith(employee);
+        String accessToken = util.attemptAuthenticationWith(employee);
 
         // Create a map for the request body
         Map<String, Object> requestBody = new HashMap<>();
@@ -230,7 +234,7 @@ class EmployeeControllerTest {
         * */
 
         // authenticate with account with role admin.
-        String accessToken = attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
         given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
@@ -250,7 +254,7 @@ class EmployeeControllerTest {
          * */
 
         // authenticate with account with role admin.
-        String accessToken = attemptAuthenticationWith(employee);
+        String accessToken = util.attemptAuthenticationWith(employee);
         given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
@@ -269,7 +273,7 @@ class EmployeeControllerTest {
         * */
 
         // authenticate with account with role admin.
-        String accessToken = attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
         given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
@@ -287,7 +291,7 @@ class EmployeeControllerTest {
          * */
 
         // authenticate with account with role admin.
-        String accessToken = attemptAuthenticationWith(employee);
+        String accessToken = util.attemptAuthenticationWith(employee);
         given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
@@ -305,7 +309,7 @@ class EmployeeControllerTest {
          * */
 
         // authenticate with account with role admin.
-        String accessToken = attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
         given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
@@ -322,7 +326,7 @@ class EmployeeControllerTest {
          * */
 
         // authenticate with account with role employee.
-        String accessToken = attemptAuthenticationWith(employee);
+        String accessToken = util.attemptAuthenticationWith(employee);
         given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
@@ -330,35 +334,6 @@ class EmployeeControllerTest {
                 .get(apiUrl + "/" + employee.getUuid())
                 .then()
                 .statusCode(401);
-    }
-    static String attemptAuthenticationWith(Account account) {
-        /*
-        * helper method attempt authentication with the passed account.
-        * it checks that the authentication request was successful
-           * by checking that the response status code is 200 OK
-        * returns jwt token resulted from the authentication process.
-        * */
-        Response response =
-                given()
-                        .contentType(ContentType.JSON)
-                        .auth()
-                        .preemptive()
-                        .basic(account.getEmail(), "123")
-                        .when()
-                        .post(authenticateUrl)
-                        .then()
-                        .statusCode(200)
-                        .body("accessToken", notNullValue())
-                        .extract()
-                        .response();
-
-        String accessToken = response
-                .jsonPath()
-                .getString("accessToken");
-
-        assertThat(accessToken).isNotEmpty();
-
-        return accessToken;
     }
 
 

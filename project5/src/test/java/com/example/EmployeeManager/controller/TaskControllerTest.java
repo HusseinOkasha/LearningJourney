@@ -18,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -41,12 +42,13 @@ import static org.junit.jupiter.api.Assertions.*;
 // to make sure that spring boot doesn't override the configuration and creates h2 database or any other in memory
 // database.
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
 class TaskControllerTest {
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName("db").withUsername("myuser");
 
-    static final String authenticateUrl = "/api/auth/authenticate";
+
     static final String apiUrl = "/api/task";
 
 
@@ -63,16 +65,18 @@ class TaskControllerTest {
     private final AccountService accountService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final TaskService taskService;
+    private final Util util;
 
     @Autowired
     TaskControllerTest(
-                       AccountService accountService,
-                       BCryptPasswordEncoder bCryptPasswordEncoder,
-                       TaskService taskService
+            AccountService accountService,
+            BCryptPasswordEncoder bCryptPasswordEncoder,
+            TaskService taskService, Util util
     ) {
         this.accountService = accountService;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.taskService = taskService;
+        this.util = util;
     }
 
     @DynamicPropertySource
@@ -151,7 +155,7 @@ class TaskControllerTest {
         * */
 
         // attempt authentication with account of role ADMIN
-        String accessToken = attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
 
         // taskDto for the task to be created.
         TaskDto taskDto = new TaskDto("this is an important task","task 1", TaskStatus.TODO );
@@ -174,7 +178,7 @@ class TaskControllerTest {
          * */
 
         // attempt authentication with account of role EMPLOYEE
-        String accessToken = attemptAuthenticationWith(employee);
+        String accessToken = util.attemptAuthenticationWith(employee);
 
         // taskDto for the task to be created.
         TaskDto taskDto = new TaskDto("this is an important task","task 1", TaskStatus.TODO );
@@ -198,7 +202,7 @@ class TaskControllerTest {
          * */
 
         // attempt authentication with account of role ADMIN
-        String accessToken = attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
 
         given()
                 .contentType(ContentType.JSON)
@@ -209,35 +213,5 @@ class TaskControllerTest {
                 .statusCode(HttpStatus.OK.value());
     }
 
-
-    static String attemptAuthenticationWith(Account account) {
-        /*
-         * helper method attempt authentication with the passed account.
-         * it checks that the authentication request was successful
-         * by checking that the response status code is 200 OK
-         * returns jwt token resulted from the authentication process.
-         * */
-        Response response =
-                given()
-                        .contentType(ContentType.JSON)
-                        .auth()
-                        .preemptive()
-                        .basic(account.getEmail(), "123")
-                        .when()
-                        .post(authenticateUrl)
-                        .then()
-                        .statusCode(200)
-                        .body("accessToken", notNullValue())
-                        .extract()
-                        .response();
-
-        String accessToken = response
-                .jsonPath()
-                .getString("accessToken");
-
-        assertThat(accessToken).isNotEmpty();
-
-        return accessToken;
-    }
 
 }
