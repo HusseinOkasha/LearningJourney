@@ -275,5 +275,65 @@ class TaskControllerTest {
                 .body("title", equalTo(newTitle));
     }
 
+    @Test
+    void adminShouldUpdateTaskDescriptionByUuid(){
+        /*
+        * It tests that account with role admin is able to update the description of one of his tasks by uuid
+        * It checks that the response status code is 200 (OK).
+        * It checks that the returned task in the response has the same description as the one provided in the request.
+        * */
 
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // value of new description.
+        final String newDescription = "new description";
+
+        // request body.
+        Map<String, String> requestBody = Map.of("description", newDescription);
+
+        // construct the url for update description endpoint.
+        String fullUrl = String.format("%s/%s/description", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("description", equalTo(newDescription));
+    }
+
+    @Test
+    void employeeShouldUpdateTaskDescriptionByUuid(){
+        /*
+        * It tests that account with role EMPLOYEE is able to update the description of one of his tasks by uuid
+        * It checks that the response status code is 200 (OK).
+        * It checks that the returned task in the response has the same description as the one provided in the request.
+        * */
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        // value of new description.
+        final String newDescription = "new description";
+
+        // request body.
+        Map<String, String> requestBody = Map.of("description", newDescription);
+
+        // construct the url for update description endpoint.
+        String fullUrl = String.format("%s/%s/description", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("description", equalTo(newDescription));
+    }
 }
