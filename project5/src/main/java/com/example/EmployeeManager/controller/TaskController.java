@@ -79,4 +79,17 @@ public class TaskController {
                 TaskMapper.taskEntityToTaskDto(accountTasksService.updateMyTaskStatusByUuid(uuid, request.status())),
                 HttpStatus.OK);
     }
+
+    @PutMapping("/{uuid}")
+    public ResponseEntity<TaskDto> UpdateTaskByUuid(@PathVariable UUID uuid,
+                                                               @RequestBody @Valid TaskDto taskDto){
+        // listens to requests on /api/task/uuid/using HTTP PUT method.
+        // it updates tasks' status using the tasks' UUID passed as a path variable.
+        // it returns a response its body contains the update task along with a status code 200 (OK).
+
+        Task task = TaskMapper.taskDtoToTaskEntity(taskDto);
+        return new ResponseEntity<>(
+                TaskMapper.taskEntityToTaskDto(accountTasksService.updateMyTaskByUuid(uuid, task)),
+                HttpStatus.OK);
+    }
 }

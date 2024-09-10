@@ -19,7 +19,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -420,13 +419,13 @@ class TaskControllerTest {
         String fullUrl = String.format("%s/%s/status", apiUrl, task.getUuid());
 
         // when the status is null.
-        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, new HashMap<>());
+        this.shouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, new HashMap<>());
 
         // when the status is empty.
-        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", ""));
+        this.shouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", ""));
 
         // when the status is not specified in the taskStatus enum.
-        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", "konafa"));
+        this.shouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", "konafa"));
 
     }
     @Test
@@ -447,19 +446,179 @@ class TaskControllerTest {
         String fullUrl = String.format("%s/%s/status", apiUrl, task.getUuid());
 
         // when the status is null.
-        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, new HashMap<>());
+        this.shouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, new HashMap<>());
 
         // when the status is empty.
-        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", ""));
+        this.shouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", ""));
 
         // when the status is not specified in the taskStatus enum.
-        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", "konafa"));
+        this.shouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", "konafa"));
 
     }
 
+    @Test
+    void adminShouldUpdateTaskByUuid(){
+        /*
+        * It tests that an account of role ADMIN can update his task by uuid.
+        * It checks that the response status code is 200 (Ok).
+        * It checks that the returned task is updated with the values passed in the request.
+        * */
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(admin);
 
 
-    void ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(String url, String accessToken, Map<String, String> requestBody){
+        // request body.
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+        requestBody.put("description", "new description");
+        requestBody.put("status", TaskStatus.IN_PROGRESS.toString());
+
+
+        // construct the url for update task endpoint.
+        String fullUrl = String.format("%s/%s", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("status", equalTo(requestBody.get("status")))
+                .body("title", equalTo(requestBody.get("title")))
+                .body("description", equalTo(requestBody.get("description")));
+
+    }
+    @Test
+    void employeeShouldUpdateTaskByUuid(){
+        /*
+        * It tests that an account of role EMPLOYEE can update his task by uuid.
+        * It checks that the response status code is 200 (Ok).
+        * It checks that the returned task is updated with the values passed in the request.
+        * */
+
+        // attempt authentication with account of role EMPLOYEE
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+
+        // request body.
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+        requestBody.put("description", "new description");
+        requestBody.put("status", TaskStatus.IN_PROGRESS.toString());
+
+
+        // construct the url for update task endpoint.
+        String fullUrl = String.format("%s/%s", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("status", equalTo(requestBody.get("status")))
+                .body("title", equalTo(requestBody.get("title")))
+                .body("description", equalTo(requestBody.get("description")));
+
+    }
+    @Test
+    void adminShouldNotUpdateTaskByUuidUsingInvalidData(){
+        /*
+        * It tests the ADMIN can't update task with invalid data.
+        * In valid data means:
+            * null / empty ( title, description or status)
+            * status with value not specified in the TaskStatus enum.
+        * It checks that the status response code is 400 (BAD_REQUEST).
+        * */
+        // construct the url for update task endpoint.
+        String fullUrl = String.format("%s/%s", apiUrl, task.getUuid());
+
+        // attempt authentication with account of role ADMIN
+        String adminToken = util.attemptAuthenticationWith(admin);
+
+        // request body.
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+        requestBody.put("status", TaskStatus.IN_PROGRESS.toString());
+
+        // in case of null description and account admin.
+        shouldNotUpdateTaskByUuidUsingInvalidData(fullUrl, adminToken, requestBody);
+
+        requestBody = new HashMap<>();
+        requestBody.put("description", "new description");
+        requestBody.put("status", TaskStatus.IN_PROGRESS.toString());
+
+        // in case of null title and account admin.
+        shouldNotUpdateTaskByUuidUsingInvalidData(fullUrl, adminToken, requestBody);
+
+        requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+        requestBody.put("description", "new description");
+
+        // in case of null status and account admin.
+        shouldNotUpdateTaskByUuidUsingInvalidData(fullUrl, adminToken, requestBody);
+
+
+        requestBody = new HashMap<>();
+        requestBody.put("title", "");
+        requestBody.put("description", "new description");
+        requestBody.put("status", TaskStatus.IN_PROGRESS.toString());
+
+        // in case of empty title and account admin.
+        shouldNotUpdateTaskByUuidUsingInvalidData(fullUrl, adminToken, requestBody);
+
+
+        requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+        requestBody.put("description", "");
+        requestBody.put("status", TaskStatus.IN_PROGRESS.toString());
+
+        // in case of empty description and account admin.
+        shouldNotUpdateTaskByUuidUsingInvalidData(fullUrl, adminToken, requestBody);
+
+
+        requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+        requestBody.put("description", "new description");
+        requestBody.put("status", "");
+
+        // in case of empty status and account admin.
+        shouldNotUpdateTaskByUuidUsingInvalidData(fullUrl, adminToken, requestBody);
+
+
+        requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+        requestBody.put("description", "new description");
+        requestBody.put("status", "konafa");
+
+        // in case of status with value isn't specified in the TaskStatus enum and account admin.
+        shouldNotUpdateTaskByUuidUsingInvalidData(fullUrl, adminToken, requestBody);
+
+    }
+
+    void shouldNotUpdateTaskByUuidUsingInvalidData(String url, String accessToken, Map<String, String> requestBody){
+        /*
+         * It is a helper method.
+         * It tests you can't update one of your tasks using invalid data
+         * It checks that the response status code is 400 (BAD_REQUEST).
+         */
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(url)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+
+    }
+    void shouldNotUpdateTaskStatusByUuidUsingInvalidStatus(String url, String accessToken, Map<String, String> requestBody){
         /*
          * It tests you can't update one of your tasks using invalid data
          * It checks that the response status code is 400 (BAD_REQUEST).

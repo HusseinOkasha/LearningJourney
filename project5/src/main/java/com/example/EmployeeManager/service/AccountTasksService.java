@@ -114,4 +114,28 @@ public class AccountTasksService {
         // save the update to the database.
         return taskService.save(dbTask);
     }
+
+    public Task updateMyTaskByUuid(UUID uuid, Task task){
+        /*
+         * It takes the uuid of the task you want to update and updated task.
+         * It returns the task after applying the update on it.
+         * */
+
+        // fetch the account of the authenticated ADMIN / EMPLOYEE.
+        Account account = authenticationService.getAuthenticatedAccount();
+
+        // fetch the task we want to update from the database.
+        Task dbTask = taskService
+                .findTaskByUuidAndAccount(uuid, account)
+                .orElseThrow(()-> new NotFoundException("couldn't find task with uuid: " + uuid));
+
+
+        // update the dbtask.
+        dbTask.setTitle(task.getTitle());
+        dbTask.setDescription(task.getDescription());
+        dbTask.setStatus(task.getStatus());
+
+        // save the update to the database.
+        return taskService.save(dbTask);
+    }
 }
