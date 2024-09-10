@@ -3,6 +3,7 @@ package com.example.EmployeeManager.controller;
 
 import com.example.EmployeeManager.dto.TaskDto;
 import com.example.EmployeeManager.dto.UpdateDescriptionRequest;
+import com.example.EmployeeManager.dto.UpdateTaskStatusRequest;
 import com.example.EmployeeManager.dto.UpdateTitleRequest;
 import com.example.EmployeeManager.model.Task;
 import com.example.EmployeeManager.service.AccountTasksService;
@@ -65,6 +66,17 @@ public class TaskController {
         // it updates tasks' description using the tasks' UUID passed as a path variable.
         return new ResponseEntity<>(
                 TaskMapper.taskEntityToTaskDto(accountTasksService.updateMyTaskDescriptionByUuid(uuid, request.description())),
+                HttpStatus.OK);
+    }
+
+    @PatchMapping("/{uuid}/status")
+    public ResponseEntity<TaskDto> UpdateTaskDescriptionByUuid(@PathVariable UUID uuid,
+                                                               @RequestBody @Valid UpdateTaskStatusRequest request){
+        // listens to requests on /api/task/uuid/status using HTTP patch method.
+        // it updates tasks' status using the tasks' UUID passed as a path variable.
+        // it returns a response its body contains the update task along with a status code 200 (OK).
+        return new ResponseEntity<>(
+                TaskMapper.taskEntityToTaskDto(accountTasksService.updateMyTaskStatusByUuid(uuid, request.status())),
                 HttpStatus.OK);
     }
 }

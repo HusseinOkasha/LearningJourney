@@ -3,8 +3,8 @@ package com.example.EmployeeManager.service;
 import com.example.EmployeeManager.exception.NotFoundException;
 import com.example.EmployeeManager.model.Account;
 import com.example.EmployeeManager.model.Task;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.example.EmployeeManager.model.TaskStatus;
+
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -94,4 +94,24 @@ public class AccountTasksService {
         return taskService.save(dbTask);
     }
 
+    public Task updateMyTaskStatusByUuid(UUID uuid, TaskStatus status) {
+        /*
+         * It takes the uuid of the task you want to update and the new status.
+         * It returns the task after applying the update on it.
+         * */
+
+        // fetch the account of the authenticated ADMIN / EMPLOYEE.
+        Account account = authenticationService.getAuthenticatedAccount();
+
+        // fetch the task we want to update from the database.
+        Task dbTask = taskService
+                .findTaskByUuidAndAccount(uuid, account)
+                .orElseThrow(()-> new NotFoundException("couldn't find task with uuid: " + uuid));
+
+        // update the status.
+        dbTask.setStatus(status);
+
+        // save the update to the database.
+        return taskService.save(dbTask);
+    }
 }

@@ -3,6 +3,7 @@ package com.example.EmployeeManager.exception;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,6 +43,15 @@ public class ApiRequestHandler {
     @ExceptionHandler(value = {DataIntegrityViolationException.class})
     public ResponseEntity<Object> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
         HttpStatus httpStatus = HttpStatus.CONFLICT;
+        ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
+                e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
+        );
+        return new ResponseEntity<>(apiExceptionDto, httpStatus);
+    }
+
+    @ExceptionHandler(value = {HttpMessageNotReadableException.class})
+    public ResponseEntity<Object> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
                 e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
         );

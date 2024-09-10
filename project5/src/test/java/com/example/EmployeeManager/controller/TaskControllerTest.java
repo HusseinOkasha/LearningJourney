@@ -19,10 +19,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -335,5 +337,142 @@ class TaskControllerTest {
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .body("description", equalTo(newDescription));
+    }
+
+    @Test
+    void adminShouldUpdateTaskStatusByUuid(){
+        /*
+         * It tests that account with role admin is able to update the status of one of his tasks by uuid
+         * It checks that the response status code is 200 (OK).
+         * It checks that the returned task in the response has the same status as the one provided in the request.
+         * */
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // value of new status.
+        // Why I have chosen IN_PROGRESS as it was created with TO_DO in the setUp method.
+        final TaskStatus status = TaskStatus.IN_PROGRESS;
+
+        // request body.
+        Map<String, TaskStatus> requestBody = Map.of("status", status);
+
+        // construct the url for update status endpoint.
+        String fullUrl = String.format("%s/%s/status", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("status", equalTo(status.toString()));
+    }
+
+    @Test
+    void employeeShouldUpdateTaskStatusByUuid(){
+        /*
+         * It tests that account with role employee is able to update the status of one of his tasks by uuid
+         * It checks that the response status code is 200 (OK).
+         * It checks that the returned task in the response has the same status as the one provided in the request.
+         * */
+
+        // attempt authentication with account of role EMPLOYEE
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        // value of new status.
+        // Why I have chosen IN_PROGRESS as it was created with TO_DO in the setUp method.
+        final TaskStatus status = TaskStatus.IN_PROGRESS;
+
+        // request body.
+        Map<String, TaskStatus> requestBody = Map.of("status", status);
+
+        // construct the url for update status endpoint.
+        String fullUrl = String.format("%s/%s/status", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("status", equalTo(status.toString()));
+    }
+    @Test
+    void adminShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(){
+        /*
+         * It tests that account with role admin can't update one of his tasks using invalid data
+         * It checks that the response status code is 400 (BAD_REQUEST).
+         * Invalid data means:
+            * empty / null status.
+            * status that is not specified in the TaskStatus enum.
+         * */
+
+        // attempt authentication with account of role EMPLOYEE
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+
+        // construct the url for update status endpoint.
+        String fullUrl = String.format("%s/%s/status", apiUrl, task.getUuid());
+
+        // when the status is null.
+        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, new HashMap<>());
+
+        // when the status is empty.
+        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", ""));
+
+        // when the status is not specified in the taskStatus enum.
+        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", "konafa"));
+
+    }
+    @Test
+    void employeeShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(){
+        /*
+         * It tests that account with role employee can't update one of his tasks using invalid data
+         * It checks that the response status code is 400 (BAD_REQUEST).
+         * Invalid data means:
+            * empty / null status.
+            * status that is not specified in the TaskStatus enum.
+         * */
+
+        // attempt authentication with account of role EMPLOYEE
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+
+        // construct the url for update status endpoint.
+        String fullUrl = String.format("%s/%s/status", apiUrl, task.getUuid());
+
+        // when the status is null.
+        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, new HashMap<>());
+
+        // when the status is empty.
+        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", ""));
+
+        // when the status is not specified in the taskStatus enum.
+        this.ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(fullUrl, accessToken, Map.of("status", "konafa"));
+
+    }
+
+
+
+    void ShouldNotUpdateTaskStatusByUuidUsingInvalidStatus(String url, String accessToken, Map<String, String> requestBody){
+        /*
+         * It tests you can't update one of your tasks using invalid data
+         * It checks that the response status code is 400 (BAD_REQUEST).
+         */
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(url)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+
     }
 }
