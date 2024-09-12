@@ -44,9 +44,9 @@ public class Account implements UserDetails {
     @Column(name = "uuid", updatable = false)
     private UUID uuid;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(
-            name = "user_tasks", // Name of the join table
+            name = "account_tasks", // Name of the join table
             joinColumns = @JoinColumn(name = "account_id"), // Foreign key for account
             inverseJoinColumns = @JoinColumn(name = "task_id") // Foreign key for task
     )

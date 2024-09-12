@@ -2,6 +2,8 @@ package com.example.EmployeeManager.model;
 
 import jakarta.persistence.*;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -25,13 +27,19 @@ public class Task {
     @Column(name = "task_status")
     private TaskStatus status;
 
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL , orphanRemoval = true)
+    @JoinColumn(name = "task_id")
+    private Set<Comment> comments;
+
     public Task() {
     }
 
-    public Task(String title, String description, TaskStatus status) {
-        this.title = title;
-        this.description = description;
-        this.status = status;
+    public Task(Builder builder) {
+        this.title = builder.title;
+        this.description = builder.description;
+        this.status = builder.status;
+        this.comments = builder.comments;
+        this.uuid = builder.uuid;
     }
 
     public Long getId() {
@@ -74,6 +82,14 @@ public class Task {
         this.status = status;
     }
 
+    public Set<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(Set<Comment> comments) {
+        this.comments = comments;
+    }
+
     public static Builder builder(){
         return new Builder();
     }
@@ -95,10 +111,14 @@ public class Task {
     }
 
     public static class Builder{
+        // optional fields
+        private Set<Comment> comments = new HashSet<>();
 
+        // required fields
         private String title;
         private String description;
         private TaskStatus status;
+        private UUID uuid;
 
         public Builder(){}
 
@@ -117,8 +137,17 @@ public class Task {
             return this;
         }
 
+        public Builder withComments(Set<Comment> comments){
+            this.comments = comments;
+            return this;
+        }
+        public Builder withUuid(UUID uuid){
+            this.uuid = uuid;
+            return this;
+        }
+
         public Task build(){
-            return new Task(title, description, status);
+            return new Task(this);
         }
 
     }
