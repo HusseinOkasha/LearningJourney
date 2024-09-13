@@ -60,6 +60,10 @@ class CommentControllerTest {
     // sample task.
     private Task task;
 
+    // sample comments
+    private Comment adminComment;
+    private Comment employeeComment;
+
     private final AccountService accountService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final TaskService taskService;
@@ -88,19 +92,8 @@ class CommentControllerTest {
 
     }
 
-//    @BeforeAll
-//    static void beforeAll(){
-//        postgres.start();
-//    }
-//
-//    @AfterAll
-//    static void afterAll(){
-//        postgres.stop();
-//    }
-
     @BeforeEach
     void setUp() {
-        // accountService.deleteAll();
 
         RestAssured.baseURI = "http://localhost:" + port;
 
@@ -136,13 +129,13 @@ class CommentControllerTest {
         taskService.save(task);
 
         // create sample comments.
-        Comment adminComment = Comment
+        adminComment = Comment
                 .builder()
                 .withBody("great work!")
 
                 .build();
 
-        Comment employeeComment = Comment
+        employeeComment = Comment
                 .builder()
                 .withBody("nice")
                 .build();
@@ -397,6 +390,124 @@ class CommentControllerTest {
                 // checks that the response status code is 400 BAD_REQUEST.
                 .statusCode(HttpStatus.UNAUTHORIZED.value())
                 .extract().response();
+    }
+
+    @Test
+    void adminShouldGetCommentByUuid() {
+        /*
+         * It checks that ADMIN can get any comment by uuid.
+         * Any comment means
+         * comments on any task, which created by anyone.
+         * It checks that the response status code is 200 (OK).
+         * It checks that the returned comment has is the right comment.
+         * checking that it's body is the same as the body of the intended comment.
+         * Its uuid is the same as the intended one.
+         * */
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), adminComment.getUuid());
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then().body("body", equalTo(adminComment.getBody())).body("uuid",
+                        equalTo(adminComment.getUuid().toString()))
+                .statusCode(HttpStatus.OK.value()); // checks that the response status code is 200 (OK).
+
+    }
+
+    @Test
+    void employeeShouldGetCommentByUuid() {
+        /*
+         * It checks that EMPLOYEE can get any comment by uuid.
+         * Any comment means
+         * comments on any task, which created by anyone.
+         * It checks that the response status code is 200 (OK).
+         * It checks that the returned comment has is the right comment.
+         * checking that it's body is the same as the body of the intended comment.
+         * Its uuid is the same as the intended one.
+         * */
+
+        // attempt authentication with account of role EMPLOYEE
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), employeeComment.getUuid());
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then().body("body", equalTo(employeeComment.getBody())).body("uuid",
+                        equalTo(employeeComment.getUuid().toString()))
+                .statusCode(HttpStatus.OK.value()); // checks that the response status code is 200 (OK).
+    }
+
+    @Test
+    void adminShouldNotGetCommentByUuidThatDoNotExist() {
+        /*
+         * It checks that ADMIN can't get any comment by uuid that doesn't exist on the database.
+         * Any comment means:
+         * comments on any task, which created by anyone.
+         * It checks that the response status code is 404 (NOT_FOUND).
+
+         * */
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), UUID.randomUUID());
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    void employeeShouldNotGetCommentByUuidThatDoNotExist() {
+        /*
+         * It checks that EMPLOYEE can't get any comment by uuid that doesn't exist on the database.
+         * Any comment means:
+         * comments on any task, which created by anyone.
+         * It checks that the response status code is 404 (NOT_FOUND).
+
+         * */
+
+        // attempt authentication with account of role EMPLOYEE
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), UUID.randomUUID());
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    void shouldNotGetCommentByUuidWithoutAccessToken() {
+        /*
+         * It checks that you can't get any comment by uuid without access token.
+         * Any comment means:
+         * comments on any task, which created by anyone.
+         * It checks that the response status code is 401 (UN_AUTHORIZED).
+         * */
+
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), adminComment.getUuid());
+        given()
+                .contentType(ContentType.JSON)
+                .when()
+                .get(fullUrl)
+                .then()
+                .statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
 

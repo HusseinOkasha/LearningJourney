@@ -36,4 +36,21 @@ public class CommentController {
                 );
         return new ResponseEntity<>(CommentMapper.CommentToCommentDto(comment), HttpStatus.CREATED);
     }
+
+    @Validated
+    @GetMapping("/{commentUuid}")
+    public ResponseEntity<CommentDto> getCommentByUuid(@PathVariable UUID commentUuid ){
+        /*
+        * Expose endpoint "/api/task/{taskUuid}/comments/{commentUuid}"
+            * It listens to Http requests using GET method.
+        * You can read any comment using it's uuid.
+        *
+        * */
+        return new ResponseEntity<>(
+                CommentMapper
+                        .CommentToCommentDto(
+                                commentService.findByUuid(commentUuid)
+                        ),
+                HttpStatus.OK);
+    }
 }
