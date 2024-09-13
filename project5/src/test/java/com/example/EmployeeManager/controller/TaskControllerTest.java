@@ -122,6 +122,9 @@ class TaskControllerTest {
                 .withDescription(" description")
                 .build();
 
+        // save sample accounts to the database.
+        accountService.save(admin);
+        accountService.save(employee);
 
 
         // save the sample task in the database.

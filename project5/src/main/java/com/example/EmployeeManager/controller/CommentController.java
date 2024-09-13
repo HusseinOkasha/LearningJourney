@@ -6,6 +6,7 @@ import com.example.EmployeeManager.model.Comment;
 import com.example.EmployeeManager.service.CommentService;
 import com.example.EmployeeManager.util.entityAndDtoMappers.CommentMapper;
 import jakarta.validation.Valid;
+import jdk.jfr.ContentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -13,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/task/{taskUuid}/comments")
@@ -51,6 +54,25 @@ public class CommentController {
                         .CommentToCommentDto(
                                 commentService.findByUuid(commentUuid)
                         ),
+                HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<Set<CommentDto>> getAllTasksComments(@PathVariable UUID taskUuid){
+        /*
+        * Expose endpoint "/api/task/{taskUuid}/comments"
+            * It listens to Http requests using GET method.
+        * It returns a list of all comments on a certain task.
+        *
+        * */
+
+        return new ResponseEntity<>(
+                                commentService
+                                        .findAllByTaskUuid(taskUuid)
+                                        .stream()
+                                        .map(CommentMapper::CommentToCommentDto)
+                                        .collect(Collectors.toSet()
+                                        ),
                 HttpStatus.OK);
     }
 }

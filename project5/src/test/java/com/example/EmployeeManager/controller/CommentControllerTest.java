@@ -1,12 +1,16 @@
 package com.example.EmployeeManager.controller;
 
+import com.example.EmployeeManager.dto.CommentDto;
 import com.example.EmployeeManager.model.*;
 import com.example.EmployeeManager.service.AccountService;
 import com.example.EmployeeManager.service.CommentService;
 import com.example.EmployeeManager.service.TaskService;
+import com.example.EmployeeManager.util.entityAndDtoMappers.CommentMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.parsing.Parser;
 import io.restassured.response.Response;
+import org.hamcrest.core.Is;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -21,15 +25,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonParser;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.request;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
@@ -96,7 +101,7 @@ class CommentControllerTest {
     void setUp() {
 
         RestAssured.baseURI = "http://localhost:" + port;
-
+        RestAssured.defaultParser = Parser.JSON;
         // create sample accounts.
         admin = Account
                 .builder()
@@ -509,6 +514,111 @@ class CommentControllerTest {
                 .then()
                 .statusCode(HttpStatus.UNAUTHORIZED.value());
     }
+    @Test
+    void adminShouldGetAllCommentsOfTaskByTaskUuid(){
+        /*
+        * It tests that ADMIN can get all comments on a certain task.
+        * It checks that the response status code is 200 (OK).
+        * It checks that the size of the returned set of comments is as expected.
+        * It checks the comments are the comments written on the task.
+        * */
+
+        // attempt authentication with account of role employee.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments", apiUrl, task.getUuid());
+
+        List<CommentDto>expectedComments = Stream.of(employeeComment, adminComment)
+                .map(CommentMapper::CommentToCommentDto)
+                .toList();
+
+        List<CommentDto> returnedComments = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then()
+                .body("",hasSize(2))
+                .statusCode(HttpStatus.OK.value())
+                .extract().jsonPath().getList(".", CommentDto.class);
+        returnedComments.forEach(commentDto -> assertThat(commentDto).isIn(returnedComments) );
+
+
+    }
+    @Test
+    void employeeShouldGetAllCommentsOfTaskByTaskUuid(){
+        /*
+         * It tests that EMPLOYEE can get all comments on a certain task.
+         * It checks that the response status code is 200 (OK).
+         * It checks that the size of the returned set of comments is as expected.
+         * It checks the comments are the comments written on the task.
+         * */
+
+        // attempt authentication with account of role employee.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments", apiUrl, task.getUuid());
+
+        List<CommentDto>expectedComments = Stream.of(employeeComment, adminComment)
+                .map(CommentMapper::CommentToCommentDto)
+                .toList();
+
+        List<CommentDto> returnedComments = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then()
+                .body("",hasSize(2))
+                .statusCode(HttpStatus.OK.value())
+                .extract().jsonPath().getList(".", CommentDto.class);
+        returnedComments.forEach(commentDto -> assertThat(commentDto).isIn(returnedComments) );
+
+
+    }
+    @Test
+    void adminShouldNotGetAllCommentsOfTaskByUuidWithNonExistentTaskUuid(){
+        /*
+         * It tests that ADMIN can't get all comments on a certain task with nonexistent uuid .
+         * It checks that the response status code is 404 (NOT_FOUND).
+         * */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        String fullUrl = String.format("%s/%s/comments", apiUrl, UUID.randomUUID());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+    }
+    @Test
+    void employeeShouldNotGetAllCommentsOfTaskByUuidWithNonExistentTaskUuid(){
+        /*
+         * It tests that EMPLOYEE can't get all comments on a certain task with nonexistent uuid .
+         * It checks that the response status code is 404 (NOT_FOUND).
+         * */
+
+        // attempt authentication with account of role employee.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments", apiUrl, UUID.randomUUID());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+    }
+
 
 
 }
