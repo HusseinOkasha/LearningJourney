@@ -75,4 +75,34 @@ public class CommentController {
                                         ),
                 HttpStatus.OK);
     }
+
+    @PutMapping("/{commentUuid}")
+    public ResponseEntity<CommentDto> updateMyCommentByUuid(@PathVariable UUID commentUuid,
+                                                            @RequestBody @Valid CommentDto commentDto ){
+        /*
+        * Expose endpoint "/api/task/{taskUuid}/comments/{commentUuid}"
+        * Handles HTTP PUT requests to update a comment.
+        * In case of successful update:
+        *   - Returns the updated comment body and uuid.
+        *   - Response status code 201 CREATED.
+        *
+        * In case of failed update due to:
+        *   - Empty / null comment body
+        *       - Response status code 400 BAD_REQUEST.
+        *   - There is no comment with the specified uuid or the authenticated account is not the comment creator
+        *       - Response status code 404 NOT FOUND.
+        * */
+        return new ResponseEntity<>(
+                CommentMapper.CommentToCommentDto(
+                commentService
+                        .updateMyCommentByUuid(
+                                commentUuid,
+                                CommentMapper.CommentDtoToComment(commentDto)
+                        )
+                ),
+                HttpStatus.CREATED
+        );
+
+    }
+
 }

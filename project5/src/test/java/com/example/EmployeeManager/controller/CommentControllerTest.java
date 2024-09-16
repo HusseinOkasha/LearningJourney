@@ -137,12 +137,13 @@ class CommentControllerTest {
         adminComment = Comment
                 .builder()
                 .withBody("great work!")
-
+                .withCreatedBy(admin)
                 .build();
 
         employeeComment = Comment
                 .builder()
                 .withBody("nice")
+                .withCreatedBy(employee)
                 .build();
 
         commentService.save(adminComment);
@@ -514,21 +515,22 @@ class CommentControllerTest {
                 .then()
                 .statusCode(HttpStatus.UNAUTHORIZED.value());
     }
+
     @Test
-    void adminShouldGetAllCommentsOfTaskByTaskUuid(){
+    void adminShouldGetAllCommentsOfTaskByTaskUuid() {
         /*
-        * It tests that ADMIN can get all comments on a certain task.
-        * It checks that the response status code is 200 (OK).
-        * It checks that the size of the returned set of comments is as expected.
-        * It checks the comments are the comments written on the task.
-        * */
+         * It tests that ADMIN can get all comments on a certain task.
+         * It checks that the response status code is 200 (OK).
+         * It checks that the size of the returned set of comments is as expected.
+         * It checks the comments are the comments written on the task.
+         * */
 
         // attempt authentication with account of role employee.
         String accessToken = util.attemptAuthenticationWith(employee);
 
         String fullUrl = String.format("%s/%s/comments", apiUrl, task.getUuid());
 
-        List<CommentDto>expectedComments = Stream.of(employeeComment, adminComment)
+        List<CommentDto> expectedComments = Stream.of(employeeComment, adminComment)
                 .map(CommentMapper::CommentToCommentDto)
                 .toList();
 
@@ -538,15 +540,16 @@ class CommentControllerTest {
                 .when()
                 .get(fullUrl)
                 .then()
-                .body("",hasSize(2))
+                .body("", hasSize(2))
                 .statusCode(HttpStatus.OK.value())
                 .extract().jsonPath().getList(".", CommentDto.class);
-        returnedComments.forEach(commentDto -> assertThat(commentDto).isIn(returnedComments) );
+        returnedComments.forEach(commentDto -> assertThat(commentDto).isIn(returnedComments));
 
 
     }
+
     @Test
-    void employeeShouldGetAllCommentsOfTaskByTaskUuid(){
+    void employeeShouldGetAllCommentsOfTaskByTaskUuid() {
         /*
          * It tests that EMPLOYEE can get all comments on a certain task.
          * It checks that the response status code is 200 (OK).
@@ -559,7 +562,7 @@ class CommentControllerTest {
 
         String fullUrl = String.format("%s/%s/comments", apiUrl, task.getUuid());
 
-        List<CommentDto>expectedComments = Stream.of(employeeComment, adminComment)
+        List<CommentDto> expectedComments = Stream.of(employeeComment, adminComment)
                 .map(CommentMapper::CommentToCommentDto)
                 .toList();
 
@@ -569,15 +572,16 @@ class CommentControllerTest {
                 .when()
                 .get(fullUrl)
                 .then()
-                .body("",hasSize(2))
+                .body("", hasSize(2))
                 .statusCode(HttpStatus.OK.value())
                 .extract().jsonPath().getList(".", CommentDto.class);
-        returnedComments.forEach(commentDto -> assertThat(commentDto).isIn(returnedComments) );
+        returnedComments.forEach(commentDto -> assertThat(commentDto).isIn(returnedComments));
 
 
     }
+
     @Test
-    void adminShouldNotGetAllCommentsOfTaskByUuidWithNonExistentTaskUuid(){
+    void adminShouldNotGetAllCommentsOfTaskByUuidWithNonExistentTaskUuid() {
         /*
          * It tests that ADMIN can't get all comments on a certain task with nonexistent uuid .
          * It checks that the response status code is 404 (NOT_FOUND).
@@ -597,8 +601,9 @@ class CommentControllerTest {
                 .statusCode(HttpStatus.NOT_FOUND.value());
 
     }
+
     @Test
-    void employeeShouldNotGetAllCommentsOfTaskByUuidWithNonExistentTaskUuid(){
+    void employeeShouldNotGetAllCommentsOfTaskByUuidWithNonExistentTaskUuid() {
         /*
          * It tests that EMPLOYEE can't get all comments on a certain task with nonexistent uuid .
          * It checks that the response status code is 404 (NOT_FOUND).
@@ -619,6 +624,207 @@ class CommentControllerTest {
 
     }
 
+    @Test
+    void adminShouldUpdateHisCommentsByCommentUuid() {
+        /*
+         * This test verifies that an ADMIN can update any of their comments using the comment ID.
+         * The following checks are performed:
+         *   - The response status code is 201 (CREATED).
+         *   - The comment body returned in the response matches the body sent in the request.
+         *   - The comment UUID returned in the response matches the UUID sent in the request.
+         */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), adminComment.getUuid());
+
+        Map<String, String> requestBody = new HashMap<>();
+        String updatedBody = "this a change in the comment body.";
+        requestBody.put("body", updatedBody);
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(fullUrl)
+                .then()
+                // checks that the comment body returned in the response matches the body sent in the request
+                .body("body", equalTo(updatedBody))
+                // checks that the comment uuid returned in the response matches the uuid sent in the request
+                .body("uuid", equalTo(adminComment.getUuid().toString()))
+                .statusCode(HttpStatus.CREATED.value());
+
+    }
+
+    @Test
+    void employeeShouldUpdateHisCommentsByCommentUuid() {
+        /*
+         * This test verifies that an EMPLOYEE can update any of their comments using the comment ID.
+         * The following checks are performed:
+         *   - The response status code is 201 (CREATED).
+         *   - The comment body returned in the response matches the body sent in the request.
+         *   - The comment UUID returned in the response matches the UUID sent in the request.
+         */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), employeeComment.getUuid());
+
+        Map<String, String> requestBody = new HashMap<>();
+        String updatedBody = "this a change in the comment body.";
+        requestBody.put("body", updatedBody);
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(fullUrl)
+                .then()
+                // checks that the comment body returned in the response matches the body sent in the request
+                .body("body", equalTo(updatedBody))
+                // checks that the comment uuid returned in the response matches the uuid sent in the request
+                .body("uuid", equalTo(employeeComment.getUuid().toString()))
+                .statusCode(HttpStatus.CREATED.value());
+
+    }
+
+
+    @Test
+    void adminShouldNotUpdateHisCommentsByCommentUuidWithNullOrEmptyBody() {
+        /*
+         * This test verifies that an ADMIN can't update any of their comments using the comment ID with null / empty
+         *  body.
+         * The following checks are performed:
+         *   - The response status code is 400 (BAD_REQUEST).
+         */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), adminComment.getUuid());
+
+        Map<String, String> requestBody = new HashMap<>();
+        String updatedBody = "";
+        requestBody.put("body", updatedBody);
+
+        // checks that admin can't update comment with empty body.
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(fullUrl)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+
+        // checks that the admin can't update comment with null body.
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .put(fullUrl)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    void employeeShouldNotUpdateHisCommentsByCommentUuidWithNullOrEmptyBody() {
+        /*
+         * This test verifies that an EMPLOYEE can't update any of their comments using the comment ID with null /
+         * empty body.
+         * The following checks are performed:
+         *   - The response status code is 400 (BAD_REQUEST).
+         */
+
+        // attempt authentication with account of role employee.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), employeeComment.getUuid());
+
+        Map<String, String> requestBody = new HashMap<>();
+        String updatedBody = "";
+        requestBody.put("body", updatedBody);
+
+        // checks that admin can't update comment with empty body.
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(fullUrl)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+
+        // checks that the admin can't update comment with null body.
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .put(fullUrl)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    void adminShouldNotUpdateCommentThatHeDidNotCreate() {
+        /*
+         * This test verifies that an ADMIN can't update comments he didn't create.
+         * The following checks are performed:
+         *   - The response status code is 404 (BAD_REQUEST).
+         */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), employeeComment.getUuid());
+
+        Map<String, String> requestBody = new HashMap<>();
+        String updatedBody = "this is a comment update.";
+        requestBody.put("body", updatedBody);
+
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    void employeeShouldNotUpdateCommentsHeDidNotCreate() {
+        /*
+         * This test verifies that an EMPLOYEE can't update comments he didn't create.
+         * The following checks are performed:
+         *   - The response status code is 400 (BAD_REQUEST).
+         */
+
+        // attempt authentication with account of role employee.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), adminComment.getUuid());
+
+        Map<String, String> requestBody = new HashMap<>();
+        String updatedBody = "this is a comment body update";
+        requestBody.put("body", updatedBody);
+
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+    }
 
 
 }

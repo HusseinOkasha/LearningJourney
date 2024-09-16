@@ -18,5 +18,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long>{
                                                   @Param("account") Account account,
                                                   @Param("task") Task task);
 
+
+    Optional<Comment> findByUuidAndCreatedBy(UUID uuid, Account createdBy);
+
     Optional<Comment> findByUuid(UUID uuid);
 }

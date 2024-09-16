@@ -34,7 +34,12 @@ public class CommentService {
     public void deleteAll(){
         commentRepository.deleteAll();
     }
+    public Comment findByUuidAndCreatedBy(UUID commentUuid, Account account){
+       return commentRepository
+                .findByUuidAndCreatedBy(commentUuid, account)
+                .orElseThrow(()->new NotFoundException("Couldn't find comment with uuid: " + commentUuid) );
 
+    }
     public Comment addCommentToTaskByUuid(Comment comment, UUID taskUuid){
         // get the currently authenticated account.
         Account account = authenticationService.getAuthenticatedAccount();
@@ -70,5 +75,16 @@ public class CommentService {
 
     public Set<Comment> findAllByTaskUuid(UUID taskUuid) {
         return taskService.findTaskByUuid(taskUuid).getComments();
+    }
+
+    public Comment updateMyCommentByUuid(UUID commentUuid, Comment comment) {
+        // fetch the currently authenticated account from the database.
+        Account dbAccount = authenticationService.getAuthenticatedAccount();
+
+        Comment dbComment = this.findByUuidAndCreatedBy(commentUuid, dbAccount);
+
+        dbComment.setBody(comment.getBody());
+
+        return  commentRepository.save(dbComment);
     }
 }
