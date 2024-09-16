@@ -827,4 +827,149 @@ class CommentControllerTest {
     }
 
 
+    @Test
+    void adminShouldDeleteCommentByUuid() {
+        /*
+         * This test verifies that an ADMIN can update any of their comments using the comment ID.
+         * The following checks are performed:
+         *   - The response status code is 20O (OK).
+         *   - Send HTTP GET request to "/api/task/{taskUuid}/comments/{commentUuid}"
+         *       - check that the response status code 404 NOT_FOUND.
+         *
+         */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), adminComment.getUuid());
+
+        // checks that the response status code is 200 OK (deletion went ok).
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+        // checks that the response status code is 404 (the comment is actually deleted).
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+    }
+
+    @Test
+    void employeeShouldDeleteCommentByUuid() {
+        /*
+         * This test verifies that an EMPLOYEE can update any of their comments using the comment ID.
+         * The following checks are performed:
+         *   - The response status code is 20O (OK).
+         *   - Send HTTP GET request to "/api/task/{taskUuid}/comments/{commentUuid}"
+         *       - check that the response status code 404 NOT_FOUND.
+         *
+         */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), employeeComment.getUuid());
+
+        // checks that the response status code is 200 OK (deletion went ok).
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+        // checks that the response status code is 404 (the comment is actually deleted).
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+    }
+
+    @Test
+    void adminShouldNotDeleteCommentTheyDidNotCreate() {
+        /*
+         * This test verifies that an ADMIN can't delete comment they didn't create.
+         * The following checks are performed:
+         *   - The response status code is 404 (NOT_FOUND).
+         */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), employeeComment.getUuid());
+
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+    }
+
+    @Test
+    void employeeShouldNotDeleteCommentTheyDidNotCreate() {
+        /*
+         * This test verifies that an EMPLOYEE can't delete comments they didn't create.
+         * The following checks are performed:
+         *   - The response status code is 404 (NOT_FOUND).
+         */
+
+        // attempt authentication with account of role admin.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), adminComment.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    void ShouldNotDeleteCommentByUuidWithoutAccessToken() {
+        /*
+         * This test verifies that it's impossible to delete comments without accessToken.
+         * The following checks are performed:
+         *   - The response status code is 401 (UNAUTHORIZED).
+         */
+
+        // attempt deletion of admin comment.
+        String fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), adminComment.getUuid());
+        given()
+                .contentType(ContentType.JSON)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.UNAUTHORIZED.value());
+
+        // attempt deletion of employee comment.
+        fullUrl = String.format("%s/%s/comments/%s", apiUrl, task.getUuid(), employeeComment.getUuid());
+        given()
+                .contentType(ContentType.JSON)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.UNAUTHORIZED.value());
+    }
+
 }

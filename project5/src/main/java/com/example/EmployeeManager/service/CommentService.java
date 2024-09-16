@@ -87,4 +87,15 @@ public class CommentService {
 
         return  commentRepository.save(dbComment);
     }
+
+    public void deleteMyCommentByUuid(UUID commentUuid) {
+        // fetch the currently authenticated account from the database.
+        Account dbAccount = authenticationService.getAuthenticatedAccount();
+
+        // fetch the comment from the database.
+        Comment comment = findByUuidAndCreatedBy(commentUuid, dbAccount);
+
+        // delete comment where it's uuid is commentUuid and createdBy is equal to dbAccount.id.
+        commentRepository.deleteByUuidAndCreatedBy(commentUuid, dbAccount);
+    }
 }

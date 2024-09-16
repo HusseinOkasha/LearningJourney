@@ -104,5 +104,22 @@ public class CommentController {
         );
 
     }
-
+    @DeleteMapping("/{commentUuid}")
+    public ResponseEntity deleteMyCommentByUuid(@PathVariable UUID commentUuid){
+        /*
+         * Expose endpoint "/api/task/{taskUuid}/comments/{commentUuid}"
+         * Handles HTTP DELETE requests to delete a comment.
+         * In case of successful deletion:
+         *    - Response status code 201 CREATED.
+         *
+         * In case of failed deletion due to:
+         *    - Deleting a comment with uuid that doesn't exist or comment that you didn't create.
+         *          - Response status code 404 NOT_FOUND.
+         *
+         *    - Deleting without access token.
+         *          - Response status code 401 UNAUTHORIZED.
+         * */
+        commentService.deleteMyCommentByUuid(commentUuid);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
