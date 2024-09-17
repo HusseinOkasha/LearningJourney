@@ -70,7 +70,7 @@ public class TaskController {
     }
 
     @PatchMapping("/{uuid}/status")
-    public ResponseEntity<TaskDto> UpdateTaskDescriptionByUuid(@PathVariable UUID uuid,
+    public ResponseEntity<TaskDto> UpdateTaskStatusByUuid(@PathVariable UUID uuid,
                                                                @RequestBody @Valid UpdateTaskStatusRequest request){
         // listens to requests on /api/task/uuid/status using HTTP patch method.
         // it updates tasks' status using the tasks' UUID passed as a path variable.

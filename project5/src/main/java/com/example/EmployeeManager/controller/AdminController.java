@@ -29,13 +29,12 @@ public class AdminController {
 
     @Validated
     @PostMapping
-    public ResponseEntity<Account> addAdminAccount( @Valid @RequestBody AddAccountRequest request){
+    public ResponseEntity<Account> addAdminAccount(@Valid @RequestBody AddAccountRequest request) {
         /*
          * listens to requests using Http method "POST" on path "/api/admin".
          * Creates accounts of role Admin.
          * returns the created account.
          * */
-
 
         // create account from request.
         Account account = AccountMapper.addAccountRequestToAccountEntity(request);
@@ -44,16 +43,17 @@ public class AdminController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Account>> getAllAdmins(){
+    public ResponseEntity<List<Account>> getAllAdmins() {
         /*
          * listens to requests using Http method "GET" on path "/api/admin".
          * returns all accounts of role ADMIN.
          * */
         return new ResponseEntity<>(this.accountService.findAllByRole(Role.ADMIN), HttpStatus.OK);
     }
+
     @Validated
     @GetMapping("/{uuid}")
-    public ResponseEntity<Account> getAdminByUuid( @PathVariable UUID uuid ){
+    public ResponseEntity<Account> getAdminByUuid(@PathVariable UUID uuid) {
         /*
          * listens to requests using Http method "GET" on path "/api/admin/{uuid}"
          * returns the account corresponding to the specified uuid.
