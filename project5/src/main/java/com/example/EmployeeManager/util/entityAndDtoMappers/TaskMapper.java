@@ -7,7 +7,7 @@ public class TaskMapper {
 
     public static TaskDto taskEntityToTaskDto(Task task){
         // converts task entity to task dto.
-        return new TaskDto(task.getDescription(), task.getTitle(), task.getStatus());
+        return new TaskDto(task.getDescription(), task.getTitle(), task.getStatus(), task.getUuid());
     }
 
     public static Task taskDtoToTaskEntity(TaskDto taskDto){

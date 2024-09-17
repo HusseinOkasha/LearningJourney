@@ -32,7 +32,6 @@ public class TaskService {
                         () -> new NotFoundException("couldn't find task with uuid: " + uuid )
                 );
     }
-
     public Optional<Task> findTaskByUuidAndAccount(UUID uuid, Account account){
         return this.taskRepository.findTaskByUuidAndAccount(uuid, account);
     }

@@ -138,4 +138,25 @@ public class AccountTasksService {
         // save the update to the database.
         return taskService.save(dbTask);
     }
+
+    public void deleteTaskByUuid(UUID uuid){
+        /*
+        * Deletes the link between the task and the authenticated account.
+        * */
+
+        // fetch the task from the database.
+        Task task = taskService.findTaskByUuid(uuid);
+
+        // get the currently authenticated account.
+        Account account = authenticationService.getAuthenticatedAccount();
+
+        // remove the task from the accounts' tasks (delete the link)
+        if (!account.getTasks().remove(task)){
+            // in case the doesn't exist on the accounts' tasks.
+            throw new NotFoundException("the task doesn't exist on your task list.");
+        }
+
+        // save the changes to the database.
+        accountService.save(account);
+    }
 }

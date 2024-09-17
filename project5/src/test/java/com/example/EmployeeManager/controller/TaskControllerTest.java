@@ -7,6 +7,7 @@ import com.example.EmployeeManager.model.Task;
 import com.example.EmployeeManager.model.TaskStatus;
 import com.example.EmployeeManager.service.AccountService;
 import com.example.EmployeeManager.service.TaskService;
+import com.example.EmployeeManager.util.entityAndDtoMappers.TaskMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
@@ -24,6 +25,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -58,6 +60,8 @@ class TaskControllerTest {
 
     // sample task.
     private Task task;
+    private Task adminTask;
+    private Task employeeTask;
 
     private final AccountService accountService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -122,17 +126,35 @@ class TaskControllerTest {
                 .withDescription(" description")
                 .build();
 
+        adminTask = Task
+                .builder()
+                .withTitle("solve admin issues.")
+                .withStatus(TaskStatus.TODO)
+                .withDescription("description")
+                .build();
+
+
+        employeeTask = Task
+                .builder()
+                .withTitle("solve employee issues.")
+                .withStatus(TaskStatus.TODO)
+                .withDescription("description")
+                .build();
+
         // save sample accounts to the database.
         accountService.save(admin);
         accountService.save(employee);
 
 
         // save the sample task in the database.
-        taskService.save(task);
+        task = taskService.save(task);
+        adminTask = taskService.save(adminTask);
+        employeeTask = taskService.save(employeeTask);
 
         // add sample task to both employee and admin
-        admin.getTasks().add(task);
-        employee.getTasks().add(task);
+        admin.getTasks().addAll(List.of(task, adminTask));
+        employee.getTasks().addAll(List.of(task, employeeTask));
+
 
         // save sample accounts to the database.
         accountService.save(admin);
@@ -158,7 +180,7 @@ class TaskControllerTest {
         String accessToken = util.attemptAuthenticationWith(admin);
 
         // taskDto for the task to be created.
-        TaskDto taskDto = new TaskDto("this is an important task","task 1", TaskStatus.TODO );
+        TaskDto taskDto = new TaskDto("this is an important task","task 1", TaskStatus.TODO,null);
 
 
 
@@ -183,7 +205,7 @@ class TaskControllerTest {
         String accessToken = util.attemptAuthenticationWith(employee);
 
         // taskDto for the task to be created.
-        TaskDto taskDto = new TaskDto("this is an important task","task 1", TaskStatus.TODO );
+        TaskDto taskDto = new TaskDto("this is an important task","task 1", TaskStatus.TODO,null);
 
         given()
                 .contentType(ContentType.JSON)
@@ -603,6 +625,149 @@ class TaskControllerTest {
         shouldNotUpdateTaskByUuidUsingInvalidData(fullUrl, adminToken, requestBody);
 
     }
+
+    @Test
+    void adminShouldDeleteTaskByUuid(){
+        /*
+         * This test verifies that an ADMIN delete any of his tasks by uuid.
+         * The following checks are performed:
+         *   - The response status code is 200 (OK).
+         *   - Send request to get all my tasks
+         *      - check that the response status code 200 OK, and the deleted task isn't on the task list.
+         */
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // construct the url for update task endpoint.
+        String fullUrl = String.format("%s/%s", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+        // check that the task isn't on the task list.
+        List<TaskDto> myTasks = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(apiUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract()
+                .jsonPath()
+                .getList("", TaskDto.class);
+        System.out.println(task);
+        System.out.println(myTasks);
+        assertThat(TaskMapper.taskEntityToTaskDto(task)).isNotIn(myTasks);
+    }
+    @Test
+    void employeeShouldDeleteTaskByUuid(){
+        /*
+         * This test verifies that an EMPLOYEE delete any of his tasks by uuid.
+         * The following checks are performed:
+         *   - The response status code is 200 (OK).
+         *   - Send request to get all my tasks
+         *      - check that the response status code 200 OK, and the deleted task isn't on the task list.
+         */
+
+        // attempt authentication with account of role EMPLOYEE
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        // construct the url for update task endpoint.
+        String fullUrl = String.format("%s/%s", apiUrl, task.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+        // check that the task isn't on the task list.
+        List<TaskDto> myTasks = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(apiUrl)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract()
+                .jsonPath()
+                .getList("", TaskDto.class);
+        System.out.println(task);
+        System.out.println(myTasks);
+        assertThat(TaskMapper.taskEntityToTaskDto(task)).isNotIn(myTasks);
+    }
+    @Test
+    void adminShouldNotDeleteTaskTheyDidNotCreate(){
+        /*
+         * This test verifies that an ADMIN can't delete task he didn't create.
+         * The following checks are performed:
+         *   - The response status code is 404 (OK).
+         */
+
+        // attempt authentication with account of role ADMIN
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // construct the url for update task endpoint.
+        String fullUrl = String.format("%s/%s", apiUrl, employeeTask.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
+    void employeeShouldNotDeleteTaskTheyDidNotCreate(){
+        /*
+         * This test verifies that an EMPLOYEE can't delete task he didn't create.
+         * The following checks are performed:
+         *   - The response status code is 404 (OK).
+         */
+
+        // attempt authentication with account of role EMPLOYEE
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        // construct the url for update task endpoint.
+        String fullUrl = String.format("%s/%s", apiUrl, adminTask.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+    @Test
+    void shouldNotDeleteTaskWithoutAccessToken(){
+        /*
+         * This test verifies that you can't delete task without access token
+         * The following checks are performed:
+         *   - The response status code is 401 (UNAUTHORIZED).
+         */
+
+        // construct the url for update task endpoint.
+        String fullUrl = String.format("%s/%s", apiUrl, adminTask.getUuid());
+
+        given()
+                .contentType(ContentType.JSON)
+                .when()
+                .delete(fullUrl)
+                .then()
+                .statusCode(HttpStatus.UNAUTHORIZED.value());
+    }
+
 
     void shouldNotUpdateTaskByUuidUsingInvalidData(String url, String accessToken, Map<String, String> requestBody){
         /*

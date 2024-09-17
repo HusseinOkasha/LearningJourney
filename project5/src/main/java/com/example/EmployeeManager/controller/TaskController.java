@@ -7,6 +7,7 @@ import com.example.EmployeeManager.dto.UpdateTaskStatusRequest;
 import com.example.EmployeeManager.dto.UpdateTitleRequest;
 import com.example.EmployeeManager.model.Task;
 import com.example.EmployeeManager.service.AccountTasksService;
+import com.example.EmployeeManager.service.TaskService;
 import com.example.EmployeeManager.util.entityAndDtoMappers.TaskMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,10 +24,12 @@ import java.util.stream.Collectors;
 public class TaskController {
 
     private final AccountTasksService accountTasksService;
+    private final TaskService taskService;
 
     @Autowired
-    public TaskController(AccountTasksService accountTasksService) {
+    public TaskController(AccountTasksService accountTasksService, TaskService taskService) {
         this.accountTasksService= accountTasksService;
+        this.taskService = taskService;
     }
 
     @PostMapping
@@ -50,6 +53,10 @@ public class TaskController {
                         .stream()
                         .map(TaskMapper::taskEntityToTaskDto).collect(Collectors.toSet()),
                 HttpStatus.OK);
+    }
+    @GetMapping("/{uuid}")
+    public ResponseEntity<TaskDto> getTaskByUuid(@PathVariable UUID uuid){
+        return  new ResponseEntity<>(TaskMapper.taskEntityToTaskDto(taskService.findTaskByUuid(uuid)), HttpStatus.OK);
     }
 
     @PatchMapping("/{uuid}/title")
@@ -91,5 +98,23 @@ public class TaskController {
         return new ResponseEntity<>(
                 TaskMapper.taskEntityToTaskDto(accountTasksService.updateMyTaskByUuid(uuid, task)),
                 HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity deleteTaskByUuid(@PathVariable UUID uuid){
+        /*
+        * Handles HTTP DELETE Requests to "/api/task/uuid"
+        * In case of a successful deletion
+        *   - returns response with status code 200 OK.
+        *
+        * In case of a failed deletion due to
+        *   - you aren't the task creator (there is no  entry in the account_tasks containing (account_id, task_id) ).
+        *   - returns response with status code 404 NOT_FOUND
+        *  - Deleting without access token.
+        *       - Response status code 401 UNAUTHORIZED.
+        * */
+
+        accountTasksService.deleteTaskByUuid(uuid);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
