@@ -86,26 +86,30 @@ public class Account implements UserDetails {
         return this.password;
     }
 
+    @DynamoDBIgnore
     @Override
     public String getUsername() {
         return this.email;
     }
 
+    @DynamoDBIgnore
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
 
+    @DynamoDBIgnore
     @Override
     public boolean isAccountNonLocked() {
         return true;
     }
-
+    @DynamoDBIgnore
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
+    @DynamoDBIgnore
     @Override
     public boolean isEnabled() {
         return true;

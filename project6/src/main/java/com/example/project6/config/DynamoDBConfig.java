@@ -35,12 +35,8 @@ public class DynamoDBConfig {
         return new DynamoDBMapper(buildAmazonDynamoDB());
     }
 
-
     private AmazonDynamoDB buildAmazonDynamoDB() {
-
-
-
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder
+        return AmazonDynamoDBClientBuilder
                 .standard()
                 .withEndpointConfiguration(
                         new AwsClientBuilder.EndpointConfiguration(
@@ -57,14 +53,5 @@ public class DynamoDBConfig {
                         )
                 )
                 .build();
-
-        CreateTableRequest request = new CreateTableRequest()
-                .withTableName("account")
-                .withKeySchema(new KeySchemaElement("id", KeyType.HASH)) // Partition key
-                .withAttributeDefinitions(new AttributeDefinition("id", ScalarAttributeType.S))
-                .withProvisionedThroughput(new ProvisionedThroughput(5L, 5L));
-
-        dynamoDB.createTable(request);
-        return dynamoDB;
     }
 }
