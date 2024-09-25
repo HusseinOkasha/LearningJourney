@@ -17,12 +17,12 @@ public class AccountRepository {
         return account.getEmail();
     }
 
-    public Account getAccountByPk(String pk) {
+    public Account getByPk(String pk) {
         return dynamoDBMapper.load(Account.class, pk);
     }
 
-    public void deleteAccountByPk(String pk) {
-        Account account = getAccountByPk(pk);
+    public void deleteByPk(String pk) {
+        Account account = getByPk(pk);
         dynamoDBMapper.delete(account);
     }
 }

@@ -17,19 +17,19 @@ public class AccountService {
     }
 
     public Account getAccountByPk(String pk) {
-        return accountRepository.getAccountByPk(pk);
+        return accountRepository.getByPk(pk);
     }
 
     public void deleteAccountByPk(String pk) {
-         accountRepository.deleteAccountByPk(pk);
+         accountRepository.deleteByPk(pk);
     }
 
     public Account updateAccountByPk(String pk, Account account) {
-        Account dbAccount = accountRepository.getAccountByPk(pk);
+        Account dbAccount = accountRepository.getByPk(pk);
         dbAccount.setName(account.getName());
         dbAccount.setEmail(account.getEmail());
         accountRepository.save(dbAccount);
-        return accountRepository.getAccountByPk(dbAccount.getPk());
+        return accountRepository.getByPk(dbAccount.getPk());
 
     }
 }
