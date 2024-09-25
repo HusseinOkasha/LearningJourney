@@ -12,8 +12,17 @@ public class AccountRepository {
         this.dynamoDBMapper = dynamoDBMapper;
     }
 
-    public String createAccount(Account account){
+    public String save(Account account){
         dynamoDBMapper.save(account);
         return account.getEmail();
+    }
+
+    public Account getAccountByPk(String pk) {
+        return dynamoDBMapper.load(Account.class, pk);
+    }
+
+    public void deleteAccountByPk(String pk) {
+        Account account = getAccountByPk(pk);
+        dynamoDBMapper.delete(account);
     }
 }

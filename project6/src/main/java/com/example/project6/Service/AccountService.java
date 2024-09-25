@@ -13,6 +13,23 @@ public class AccountService {
     }
 
     public String createAccount(Account account){
-        return  accountRepository.createAccount(account);
+        return  accountRepository.save(account);
+    }
+
+    public Account getAccountByPk(String pk) {
+        return accountRepository.getAccountByPk(pk);
+    }
+
+    public void deleteAccountByPk(String pk) {
+         accountRepository.deleteAccountByPk(pk);
+    }
+
+    public Account updateAccountByPk(String pk, Account account) {
+        Account dbAccount = accountRepository.getAccountByPk(pk);
+        dbAccount.setName(account.getName());
+        dbAccount.setEmail(account.getEmail());
+        accountRepository.save(dbAccount);
+        return accountRepository.getAccountByPk(dbAccount.getPk());
+
     }
 }
