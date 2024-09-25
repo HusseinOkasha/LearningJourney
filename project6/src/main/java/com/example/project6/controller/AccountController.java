@@ -20,4 +20,5 @@ public class AccountController {
     public String createAccount(@RequestBody Account account){
         return  accountService.createAccount(account);
     }
+
 }
