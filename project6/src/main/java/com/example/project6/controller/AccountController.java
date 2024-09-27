@@ -1,7 +1,10 @@
 package com.example.project6.controller;
 
 import com.example.project6.Service.AccountService;
-import com.example.project6.entity.Account;
+import com.example.project6.dto.CreateAccountRequest;
+import com.example.project6.entity.DBItem;
+
+import com.example.project6.util.entityAndDtoMappers.DBItemMapper;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,23 +16,12 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    @PostMapping()
-    public String createAccount(@RequestBody Account account){
-        return  accountService.createAccount(account);
+    @PostMapping
+    public DBItem createAccount(@RequestBody CreateAccountRequest request){
+
+        // convert CreateAccountRequest dto to DBItem.
+        DBItem item = DBItemMapper.createAccountRequestToDBItem(request);
+        return  accountService.save(item);
     }
 
-    @GetMapping("/{pk}")
-    public Account getAccountByPk(@PathVariable String pk){
-        return accountService.getAccountByPk(pk);
-    }
-
-    @PutMapping("/{pk}")
-    public Account updateAccountByPk(@PathVariable String pk, @RequestBody Account account){
-        return accountService.updateAccountByPk(pk, account);
-    }
-
-    @DeleteMapping("/{pk}")
-    public void deleteAccountByPk(@PathVariable String pk){
-        accountService.deleteAccountByPk(pk);
-    }
 }
