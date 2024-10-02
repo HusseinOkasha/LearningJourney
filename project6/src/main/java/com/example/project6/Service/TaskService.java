@@ -1,77 +1,76 @@
 package com.example.project6.Service;
 
-import com.example.project6.Enum.EntityType;
-import com.example.project6.dao.DBItemRepository;
 
-
-import com.example.project6.entity.DBItem;
-
+import com.example.project6.dao.AccountTaskRepository;
+import com.example.project6.dao.TaskAccountLinkRepository;
+import com.example.project6.dao.TaskRepository;
+import com.example.project6.entity.Account;
+import com.example.project6.entity.AccountTaskLink;
+import com.example.project6.entity.Task;
+import com.example.project6.entity.TaskAccountLink;
 import org.springframework.stereotype.Service;
+
 
 import java.util.UUID;
 
 @Service
 public class TaskService {
 
-    private final DBItemRepository dbItemRepository;
+    private final TaskRepository taskRepository;
+    private final AccountService accountService;
+    private final AccountTaskRepository accountTaskRepository;
+    private final TaskAccountLinkRepository taskAccountLinkRepository;
 
-    public TaskService(DBItemRepository dbItemRepository) {
-        this.dbItemRepository = dbItemRepository;
+
+    public TaskService(TaskRepository taskRepository, AccountService accountService, AccountTaskRepository accountTaskRepository, TaskAccountLinkRepository taskAccountLinkRepository) {
+        this.taskRepository = taskRepository;
+        this.accountService = accountService;
+        this.accountTaskRepository = accountTaskRepository;
+        this.taskAccountLinkRepository = taskAccountLinkRepository;
     }
 
-    public DBItem save(DBItem item){
-        if(item.getTaskUuid() == null){
-            item.setTaskUuid(UUID.randomUUID());
+    public Task createNewTask(Task task){
+        if(task.getTaskUuid() == null){
+            task.setTaskUuid(UUID.randomUUID());
         }
-
-        // Save the task entity.
-        item.setPk(String.format("TASK#%s", item.getTaskUuid()));
-        item.setSk(String.format("TASK#%s", item.getTaskUuid()));
-        item.setEntityType(EntityType.TASK);
-
-        return dbItemRepository.save(item);
-
+        return taskRepository.save(task);
     }
 
-    public void addTaskToAccount(UUID accountUuid, DBItem item){
+    public void addTaskToAccount(UUID accountUuid, Task task){
         // fetch the account from the database.
-        DBItem dbAccount = dbItemRepository
-                .load(String.format("ACCOUNT#%s", accountUuid), String.format("ACCOUNT#%s", accountUuid));
+        Account dbAccount = accountService.getAccountByUuid(accountUuid);
 
         // create task uuid if it isn't created.
-        if(item.getTaskUuid() == null){
-            item.setTaskUuid(UUID.randomUUID());
+        if(task.getTaskUuid() == null){
+            task.setTaskUuid(UUID.randomUUID());
         }
 
-        UUID taskUuid = item.getTaskUuid();
+        UUID taskUuid = task.getTaskUuid();
 
-        // Save the task entity.
-        item.setPk(String.format("TASK#%s", taskUuid));
-        item.setSk(String.format("TASK#%s", taskUuid));
-        item.setEntityType(EntityType.TASK);
-        dbItemRepository.save(item);
+        // Save the task entity
+        taskRepository.save(task);
 
         // create Account_Task_Link
-        DBItem accountTaskLink = DBItem.builder()
-                .withPk(String.format("ACCOUNT#%s", accountUuid))
-                .withSk(String.format("TASK#%s", taskUuid))
+        AccountTaskLink accountTaskLink = AccountTaskLink.builder()
                 .withAccountUuid(accountUuid)
                 .withTaskUuid(taskUuid)
-                .withTitle(item.getTitle())
-                .withEntityType(EntityType.ACCOUNT_TASK_LINK)
+                .withAccountName(dbAccount.getName())
+                .withTaskTitle(task.getTitle())
                 .build();
-        dbItemRepository.save(accountTaskLink);
+
+        // save Account_Task_Link to the database.
+        accountTaskRepository.save(accountTaskLink);
 
         // create Task_Account_Link
-        DBItem taskAccountLink = DBItem.builder()
+        TaskAccountLink taskAccountLink = TaskAccountLink.builder()
                 .withPk(String.format("TASK#%s", taskUuid))
                 .withSk(String.format("ACCOUNT#%s", accountUuid))
                 .withAccountUuid(accountUuid)
                 .withTaskUuid(taskUuid)
-                .withTitle(dbAccount.getName())
-                .withEntityType(EntityType.TASK_ACCOUNT_LINK)
+                .withTaskTitle(dbAccount.getName())
                 .build();
-        dbItemRepository.save(taskAccountLink);
 
+        // save Task_Account_Link to the database.
+        taskAccountLinkRepository.save(taskAccountLink);
     }
 }
