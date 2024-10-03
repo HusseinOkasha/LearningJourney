@@ -1,9 +1,11 @@
 package com.example.project6.Service;
 
 
+import com.amazonaws.services.dynamodbv2.datamodeling.TransactionWriteRequest;
 import com.example.project6.dao.AccountTaskRepository;
 import com.example.project6.dao.TaskAccountLinkRepository;
 import com.example.project6.dao.TaskRepository;
+import com.example.project6.dao.TransactionsRepository;
 import com.example.project6.entity.Account;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
@@ -20,13 +22,14 @@ public class TaskService {
     private final AccountService accountService;
     private final AccountTaskRepository accountTaskRepository;
     private final TaskAccountLinkRepository taskAccountLinkRepository;
+    private final TransactionsRepository transactionsRepository;
 
-
-    public TaskService(TaskRepository taskRepository, AccountService accountService, AccountTaskRepository accountTaskRepository, TaskAccountLinkRepository taskAccountLinkRepository) {
+    public TaskService(TaskRepository taskRepository, AccountService accountService, AccountTaskRepository accountTaskRepository, TaskAccountLinkRepository taskAccountLinkRepository, TransactionsRepository transactionsRepository) {
         this.taskRepository = taskRepository;
         this.accountService = accountService;
         this.accountTaskRepository = accountTaskRepository;
         this.taskAccountLinkRepository = taskAccountLinkRepository;
+        this.transactionsRepository = transactionsRepository;
     }
 
     public Task createNewTask(Task task){
@@ -47,8 +50,11 @@ public class TaskService {
 
         UUID taskUuid = task.getTaskUuid();
 
-        // Save the task entity
-        taskRepository.save(task);
+        // create write transaction request.
+        TransactionWriteRequest transactionWriteRequest = new TransactionWriteRequest();
+
+        // add saving the task to the transaction.
+        transactionWriteRequest.addPut(task);
 
         // create Account_Task_Link
         AccountTaskLink accountTaskLink = AccountTaskLink.builder()
@@ -58,8 +64,8 @@ public class TaskService {
                 .withTaskTitle(task.getTitle())
                 .build();
 
-        // save Account_Task_Link to the database.
-        accountTaskRepository.save(accountTaskLink);
+        // add saving Account_Task_Link to the transaction.
+        transactionWriteRequest.addPut(accountTaskLink);
 
         // create Task_Account_Link
         TaskAccountLink taskAccountLink = TaskAccountLink.builder()
@@ -70,7 +76,10 @@ public class TaskService {
                 .withTaskTitle(dbAccount.getName())
                 .build();
 
-        // save Task_Account_Link to the database.
-        taskAccountLinkRepository.save(taskAccountLink);
+        // add saving Task_Account_Link to the transaction.
+        transactionWriteRequest.addPut(taskAccountLink);
+
+        // perform the transaction on the database.
+        transactionsRepository.transactionWrite(transactionWriteRequest);
     }
 }
