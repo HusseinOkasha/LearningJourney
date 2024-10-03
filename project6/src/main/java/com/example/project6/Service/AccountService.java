@@ -8,6 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.NotActiveException;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -45,5 +46,9 @@ public class AccountService {
     public Account getAccountByUuid(UUID uuid) {
         Account account  = Account.builder().withAccountUuid(uuid).build();
         return accountRepository.load(account);
+    }
+
+    public List<Account> getAllEmployees() {
+        return accountRepository.getAllByRole(Role.EMPLOYEE);
     }
 }
