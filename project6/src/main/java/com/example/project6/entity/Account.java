@@ -109,6 +109,12 @@ public class Account {
         this.role = role;
     }
 
+    public void generateAccountUuid(){
+        if (accountUuid == null) {
+            this.accountUuid = UUID.randomUUID();
+        }
+    }
+
     public static class Builder {
         // **** Composite Key ****
         private String pk;
