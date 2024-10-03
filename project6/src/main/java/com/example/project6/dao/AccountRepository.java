@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 
 @Repository
@@ -37,5 +38,9 @@ public class AccountRepository {
                 .withKeyConditionExpression("GSI1PK = :gsiPkValue") // Define the condition for the GSI partition key
                 .withExpressionAttributeValues(Map.of(":gsiPkValue", new AttributeValue().withS(role.toString()))); // Provide the value for gsi_pk
         return  dynamoDBMapper.query(Account.class, queryExpression);
+    }
+
+    public void deleteByAccountUuid(Account account) {
+        dynamoDBMapper.delete(account);
     }
 }

@@ -66,5 +66,10 @@ public class EmployeeController {
         return new ResponseEntity<>(employeesProfileDto, HttpStatus.OK);
     }
 
+    @DeleteMapping("/{accountUuid}")
+    public void DeleteEmployeeByUuid(@PathVariable UUID accountUuid){
+        accountService.deleteAccountByUuid(accountUuid);
+    }
+
 
 }

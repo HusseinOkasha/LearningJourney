@@ -51,4 +51,9 @@ public class AccountService {
     public List<Account> getAllEmployees() {
         return accountRepository.getAllByRole(Role.EMPLOYEE);
     }
+
+    public void deleteAccountByUuid(UUID accountUuid) {
+        Account account = Account.builder().withAccountUuid(accountUuid).build();
+        accountRepository.deleteByAccountUuid(account);
+    }
 }
