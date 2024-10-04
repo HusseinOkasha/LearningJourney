@@ -11,6 +11,7 @@ import com.example.project6.entity.TaskAccountLink;
 import org.springframework.stereotype.Service;
 
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,14 +19,16 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final AccountService accountService;
+    private final TaskAccountsService taskAccountsService;
     private final TransactionsRepository transactionsRepository;
 
     public TaskService(TaskRepository taskRepository,
-                       AccountService accountService,
+                       AccountService accountService, TaskAccountsService taskAccountsService,
                        TransactionsRepository transactionsRepository) {
 
         this.taskRepository = taskRepository;
         this.accountService = accountService;
+        this.taskAccountsService = taskAccountsService;
         this.transactionsRepository = transactionsRepository;
     }
 
@@ -86,4 +89,36 @@ public class TaskService {
     }
 
 
+    public void deleteTaskByUuid(UUID taskUuid) {
+        // task to be deleted.
+        Task task = Task
+                .builder()
+                .withTaskUuid(taskUuid)
+                .build();
+
+        // fetch all task account links from database.
+        List<TaskAccountLink> taskAccounts = taskAccountsService.getTaskAccounts(taskUuid);
+
+        // create write transaction request.
+        TransactionWriteRequest transactionWriteRequest = new TransactionWriteRequest();
+
+        // delete the task itself.
+        transactionWriteRequest.addDelete(task);
+
+        // delete links
+        taskAccounts.forEach((link)-> {
+            // delete task account link.
+            transactionWriteRequest.addDelete(link);
+
+            AccountTaskLink accountTaskLink = AccountTaskLink.builder()
+                    .withAccountUuid(link.getAccountUuid())
+                    .withTaskUuid(taskUuid)
+                    .build();
+            // delete account task.
+            transactionWriteRequest.addDelete(accountTaskLink);
+
+        });
+        transactionsRepository.transactionWrite(transactionWriteRequest);
+
+    }
 }

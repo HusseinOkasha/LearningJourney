@@ -44,4 +44,9 @@ public class TaskController {
         return new ResponseEntity<>(taskDto, HttpStatus.OK);
     }
 
+    @DeleteMapping("/{taskUuid}")
+    public ResponseEntity deleteTaskUuid(@PathVariable UUID taskUuid){
+        taskService.deleteTaskByUuid(taskUuid);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
