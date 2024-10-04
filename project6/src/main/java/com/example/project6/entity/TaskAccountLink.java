@@ -49,12 +49,12 @@ public class TaskAccountLink {
 
     @DynamoDBHashKey
     public String getPk() {
-        return String.format("%s#%s", EntityType.TASK, accountUuid) ;
+        return String.format("%s#%s", EntityType.TASK, taskUuid) ;
     }
 
     @DynamoDBRangeKey
     public String getSk() {
-        return String.format("%s#%s", EntityType.ACCOUNT, taskUuid) ;
+        return String.format("%s#%s", EntityType.ACCOUNT, accountUuid == null ? "": accountUuid) ;
     }
 
     @DynamoDBAttribute(attributeName = "account_name")

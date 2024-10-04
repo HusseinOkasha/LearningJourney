@@ -1,6 +1,6 @@
 package com.example.project6.Service;
 
-import com.example.project6.dao.AccountTaskRepository;
+import com.example.project6.dao.AccountTasksRepository;
 import com.example.project6.entity.AccountTaskLink;
 import org.springframework.stereotype.Service;
 
@@ -9,13 +9,13 @@ import java.util.UUID;
 
 @Service
 public class AccountTasksService {
-    private final AccountTaskRepository accountTaskRepository;
+    private final AccountTasksRepository accountTasksRepository;
 
-    public AccountTasksService(AccountTaskRepository accountTaskRepository) {
-        this.accountTaskRepository = accountTaskRepository;
+    public AccountTasksService(AccountTasksRepository accountTasksRepository) {
+        this.accountTasksRepository = accountTasksRepository;
     }
 
     public List<AccountTaskLink> getAccountTasks(UUID accountUuid) {
-        return accountTaskRepository.getAccountTasks(accountUuid);
+        return accountTasksRepository.getAccountTasks(accountUuid);
     }
 }

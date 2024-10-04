@@ -2,8 +2,6 @@ package com.example.project6.Service;
 
 
 import com.amazonaws.services.dynamodbv2.datamodeling.TransactionWriteRequest;
-import com.example.project6.dao.AccountTaskRepository;
-import com.example.project6.dao.TaskAccountLinkRepository;
 import com.example.project6.dao.TaskRepository;
 import com.example.project6.dao.TransactionsRepository;
 import com.example.project6.entity.Account;
@@ -13,7 +11,6 @@ import com.example.project6.entity.TaskAccountLink;
 import org.springframework.stereotype.Service;
 
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
