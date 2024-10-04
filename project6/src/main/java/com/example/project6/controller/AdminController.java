@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.http.HttpResponse;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -58,6 +59,23 @@ public class AdminController {
         ProfileDto profileDto = AccountMapper.AccountEntityToAccountProfileDto(DBAccount);
 
         return new ResponseEntity<>(profileDto, HttpStatus.OK);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ProfileDto>> getAllAdminAccounts(){
+        /*
+        * Handle HTTP GET requests  to /api/admin/all
+        * In case of success it returns
+        *   - profile dto.
+        *   - HTTP response status OK 200.
+        * */
+        List<Account> admins = accountService.getAllAdmins();
+        List<ProfileDto>adminProfilesDto = admins
+                .stream()
+                .map(AccountMapper::AccountEntityToAccountProfileDto)
+                .toList();
+        return new ResponseEntity<>(adminProfilesDto, HttpStatus.OK);
+
     }
 
 }

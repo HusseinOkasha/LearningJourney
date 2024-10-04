@@ -56,4 +56,8 @@ public class AccountService {
         Account account = Account.builder().withAccountUuid(accountUuid).build();
         accountRepository.deleteByAccountUuid(account);
     }
+
+    public List<Account> getAllAdmins() {
+        return accountRepository.getAllByRole(Role.ADMIN);
+    }
 }
