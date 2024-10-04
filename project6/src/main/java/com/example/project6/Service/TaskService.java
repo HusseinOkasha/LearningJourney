@@ -82,4 +82,9 @@ public class TaskService {
         // perform the transaction on the database.
         transactionsRepository.transactionWrite(transactionWriteRequest);
     }
+
+    public Task getTaskByUuid(UUID taskUuid) {
+        Task task = Task.builder().withTaskUuid(taskUuid).build();
+        return taskRepository.load(task);
+    }
 }

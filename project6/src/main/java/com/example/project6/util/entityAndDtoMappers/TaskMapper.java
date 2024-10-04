@@ -1,6 +1,7 @@
 package com.example.project6.util.entityAndDtoMappers;
 
 import com.example.project6.dto.CreateTaskRequest;
+import com.example.project6.dto.TaskDto;
 import com.example.project6.entity.Task;
 
 public class TaskMapper {
@@ -12,4 +13,9 @@ public class TaskMapper {
                 .withDescription(request.description())
                 .build();
     }
+
+    static public TaskDto TaskEntityToTaskDto(Task task){
+        return new TaskDto(task.getTitle(), task.getDescription(), task.getStatus(), task.getTaskUuid());
+    }
+
 }
