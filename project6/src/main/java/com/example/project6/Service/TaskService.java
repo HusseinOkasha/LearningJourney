@@ -13,6 +13,7 @@ import com.example.project6.entity.TaskAccountLink;
 import org.springframework.stereotype.Service;
 
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -20,15 +21,14 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final AccountService accountService;
-    private final AccountTaskRepository accountTaskRepository;
-    private final TaskAccountLinkRepository taskAccountLinkRepository;
     private final TransactionsRepository transactionsRepository;
 
-    public TaskService(TaskRepository taskRepository, AccountService accountService, AccountTaskRepository accountTaskRepository, TaskAccountLinkRepository taskAccountLinkRepository, TransactionsRepository transactionsRepository) {
+    public TaskService(TaskRepository taskRepository,
+                       AccountService accountService,
+                       TransactionsRepository transactionsRepository) {
+
         this.taskRepository = taskRepository;
         this.accountService = accountService;
-        this.accountTaskRepository = accountTaskRepository;
-        this.taskAccountLinkRepository = taskAccountLinkRepository;
         this.transactionsRepository = transactionsRepository;
     }
 
@@ -87,4 +87,6 @@ public class TaskService {
         Task task = Task.builder().withTaskUuid(taskUuid).build();
         return taskRepository.load(task);
     }
+
+
 }

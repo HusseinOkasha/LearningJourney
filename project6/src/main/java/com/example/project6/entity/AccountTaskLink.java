@@ -21,7 +21,8 @@ public class AccountTaskLink {
     private UUID taskUuid;
 
     // **** Constructors ****
-    public AccountTaskLink(){}
+    public AccountTaskLink(){
+    }
 
     private AccountTaskLink(Builder builder){
         // **** Composite primary key ****
@@ -51,7 +52,7 @@ public class AccountTaskLink {
 
     @DynamoDBRangeKey
     public String getSk() {
-        return String.format("%s#%s", EntityType.TASK, taskUuid) ;
+        return String.format("%s#%s", EntityType.TASK, taskUuid == null ? "" : taskUuid) ;
     }
 
     @DynamoDBAttribute(attributeName = "account_name")
