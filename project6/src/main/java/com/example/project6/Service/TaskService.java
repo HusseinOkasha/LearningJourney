@@ -114,7 +114,7 @@ public class TaskService {
                     .withAccountUuid(link.getAccountUuid())
                     .withTaskUuid(taskUuid)
                     .build();
-            // delete account task.
+            // delete account task link.
             transactionWriteRequest.addDelete(accountTaskLink);
 
         });
