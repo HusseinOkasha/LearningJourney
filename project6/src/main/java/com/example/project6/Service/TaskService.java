@@ -2,6 +2,7 @@ package com.example.project6.Service;
 
 
 import com.amazonaws.services.dynamodbv2.datamodeling.TransactionWriteRequest;
+import com.example.project6.Enum.TaskStatus;
 import com.example.project6.dao.AccountTasksRepository;
 import com.example.project6.dao.TaskAccountsRepository;
 import com.example.project6.dao.TaskRepository;
@@ -243,6 +244,25 @@ public class TaskService {
         // save the task to the database.
         this.taskRepository.save(dbTask);
 
+    }
+
+
+    public void updateTaskStatusByUuid(TaskStatus status, UUID taskUuid) {
+        /*
+         * Updates the task status using task uuid.
+         *   1) Fetches the task we want to update.
+         *   2) Sets the task status with the new status.
+         *   3) Save the task after performing the update to the database.
+         * */
+
+        // fetch the task from the database.
+        Task dbTask = this.getTaskByUuid(taskUuid);
+
+        // update the dbTask status.
+        dbTask.setStatus(status);
+
+        // save the task to the database.
+        this.taskRepository.save(dbTask);
     }
 
     public void deleteTaskByUuid(UUID taskUuid) {

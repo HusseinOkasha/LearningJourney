@@ -59,6 +59,7 @@ public class TaskController {
         taskService.updateTaskTitleByUuid(request.title(), taskUuid);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
     @PatchMapping("/{taskUuid}/description")
     public ResponseEntity updateTaskDescriptionByUuid(@RequestBody UpdateTaskDescriptionRequest request,
                                                 @PathVariable UUID taskUuid){
@@ -69,6 +70,19 @@ public class TaskController {
         * */
         taskService.updateTaskDescriptionByUuid(request, taskUuid);
         return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PatchMapping("/{taskUuid}/status")
+    public ResponseEntity updateTaskStatusByUuid(@RequestBody UpdateTaskStatusRequest request,
+                                                 @PathVariable UUID taskUuid){
+        /*
+        * Handles HTTP PATCH requests to "/api/task/{taskUuid}/status"
+        * Updates the task status.
+        * Returns HTTP response STATUS CODE 200 OK.
+        * */
+
+        taskService.updateTaskStatusByUuid(request.status(), taskUuid);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/{taskUuid}")
