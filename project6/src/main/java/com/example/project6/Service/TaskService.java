@@ -226,7 +226,7 @@ public class TaskService {
 
     }
 
-    public void updateTaskDescriptionByUuid(UpdateTaskDescriptionRequest request, UUID taskUuid) {
+    public void updateTaskDescriptionByUuid(String description, UUID taskUuid) {
         /*
         * Update the task description using the task uuid.
         *   1) Fetches the task we want to update.
@@ -239,7 +239,7 @@ public class TaskService {
         Task dbTask = this.getTaskByUuid(taskUuid);
 
         // update the db task description.
-        dbTask.setDescription(request.description());
+        dbTask.setDescription(description);
 
         // save the task to the database.
         this.taskRepository.save(dbTask);

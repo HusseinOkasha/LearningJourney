@@ -68,7 +68,7 @@ public class TaskController {
         * Updates the task description.
         * Returns HTTP RESPONSE STATUS CODE 200 OK.
         * */
-        taskService.updateTaskDescriptionByUuid(request, taskUuid);
+        taskService.updateTaskDescriptionByUuid(request.description(), taskUuid);
         return new ResponseEntity(HttpStatus.OK);
     }
 
