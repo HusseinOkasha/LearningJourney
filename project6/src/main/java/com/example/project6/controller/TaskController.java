@@ -5,6 +5,7 @@ import com.example.project6.Service.AccountTasksService;
 import com.example.project6.Service.TaskService;
 import com.example.project6.dto.CreateTaskRequest;
 import com.example.project6.dto.TaskDto;
+import com.example.project6.dto.UpdateTaskRequest;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.util.entityAndDtoMappers.TaskMapper;
@@ -42,6 +43,17 @@ public class TaskController {
         TaskDto taskDto = TaskMapper.TaskEntityToTaskDto(taskService.getTaskByUuid(taskUuid));
 
         return new ResponseEntity<>(taskDto, HttpStatus.OK);
+    }
+
+    @PutMapping("/{taskUuid}")
+    public ResponseEntity updateTaskByUuid(@RequestBody UpdateTaskRequest request, @PathVariable UUID taskUuid){
+        /*
+        * Handles HTTP PUT requests to "/api/task/{taskUuid}".
+        * It updates the all task attributes.
+        * It returns HTTP STATUS CODE 200 OK in case of success.
+        * */
+        taskService.updateTaskByTaskUuid(TaskMapper.updateTaskRequestToTaskEntity(request), taskUuid);
+        return new ResponseEntity(HttpStatus.OK);
     }
 
     @DeleteMapping("/{taskUuid}")

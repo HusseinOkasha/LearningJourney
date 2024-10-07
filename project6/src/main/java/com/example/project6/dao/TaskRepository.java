@@ -5,6 +5,8 @@ import com.example.project6.entity.Account;
 import com.example.project6.entity.Task;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public class TaskRepository {
     final private DynamoDBMapper dynamoDBMapper ;
@@ -17,8 +19,8 @@ public class TaskRepository {
         dynamoDBMapper.save(task);
         return task;
     }
-    public Task load(Task task){
-        return  dynamoDBMapper.load(task);
+    public Optional<Task> load(Task task){
+        return Optional.ofNullable(dynamoDBMapper.load(task));
 
     }
 }

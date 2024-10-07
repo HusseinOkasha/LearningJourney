@@ -40,4 +40,14 @@ public class AccountTasksRepository {
         return dynamoDBMapper.query(AccountTaskLink.class, queryExpression);
 
     }
+
+    public AccountTaskLink getByAccountUuidAndTaskUuid(UUID accountUuid, UUID taskUuid){
+        AccountTaskLink accountTaskLink = AccountTaskLink
+                .builder()
+                .withAccountUuid(accountUuid)
+                .withTaskUuid(taskUuid)
+                .build();
+
+        return dynamoDBMapper.load(accountTaskLink);
+    }
 }
