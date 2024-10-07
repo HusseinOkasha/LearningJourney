@@ -23,21 +23,21 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final AccountService accountService;
     private final TaskAccountsService taskAccountsService;
-    private final TaskAccountsRepository taskAccountsRepository;
+    private final AccountTasksService accountTasksService;
     private final TransactionsRepository transactionsRepository;
-    private final AccountTasksRepository accountTasksRepository;
+
     public TaskService(TaskRepository taskRepository,
                        AccountService accountService,
                        TaskAccountsService taskAccountsService,
-                       TaskAccountsRepository taskAccountsRepository,
-                       TransactionsRepository transactionsRepository, AccountTasksRepository accountTasksRepository) {
+                       TransactionsRepository transactionsRepository,
+                       AccountTasksService accountTasksService) {
 
         this.taskRepository = taskRepository;
         this.accountService = accountService;
         this.taskAccountsService = taskAccountsService;
-        this.taskAccountsRepository = taskAccountsRepository;
+        this.accountTasksService = accountTasksService;
         this.transactionsRepository = transactionsRepository;
-        this.accountTasksRepository = accountTasksRepository;
+
     }
 
     public Task createNewTask(Task task){
@@ -113,15 +113,7 @@ public class TaskService {
         * */
 
         // fetch the task from the database.
-        Task dbTask = taskRepository.load(
-                Task
-                        .builder()
-                        .withTaskUuid(taskUuid)
-                        .build()
-        ).orElseThrow(
-                // throws exception in case the task you want to update isn't found.
-                ()-> new NotFoundException("The task your are trying to update doesn't exist")
-        );
+        Task dbTask = this.getTaskByUuid(taskUuid);
 
         // update the dbTask.
         dbTask.setDescription(task.getDescription());
@@ -129,7 +121,7 @@ public class TaskService {
         dbTask.setTitle(task.getTitle());
 
         // fetch task account links from the database.
-        List<TaskAccountLink> taskAccountLinks = taskAccountsRepository.getTaskAccounts(taskUuid);
+        List<TaskAccountLink> taskAccountLinks = taskAccountsService.getTaskAccounts(taskUuid);
 
         // update common attributes between task entity and TaskAccountLink entity.
         taskAccountLinks.forEach(
@@ -142,7 +134,7 @@ public class TaskService {
                 .stream()
                 .map(
                         (taskAccountLink)->
-                                accountTasksRepository
+                                accountTasksService
                                         .getByAccountUuidAndTaskUuid(
                                                 taskAccountLink.getAccountUuid(), taskUuid
                                         )

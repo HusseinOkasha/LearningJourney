@@ -18,4 +18,8 @@ public class AccountTasksService {
     public List<AccountTaskLink> getAccountTasks(UUID accountUuid) {
         return accountTasksRepository.getAccountTasks(accountUuid);
     }
+
+    public AccountTaskLink getByAccountUuidAndTaskUuid(UUID accountUuid, UUID taskUuid){
+        return accountTasksRepository.getByAccountUuidAndTaskUuid(accountUuid, taskUuid);
+    }
 }
