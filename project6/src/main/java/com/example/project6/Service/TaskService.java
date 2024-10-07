@@ -6,6 +6,7 @@ import com.example.project6.dao.AccountTasksRepository;
 import com.example.project6.dao.TaskAccountsRepository;
 import com.example.project6.dao.TaskRepository;
 import com.example.project6.dao.TransactionsRepository;
+import com.example.project6.dto.UpdateTaskDescriptionRequest;
 import com.example.project6.entity.Account;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
@@ -221,6 +222,26 @@ public class TaskService {
 
         // fire the transaction to the database
         transactionsRepository.transactionWrite(transactionWriteRequest);
+
+    }
+
+    public void updateTaskDescriptionByUuid(UpdateTaskDescriptionRequest request, UUID taskUuid) {
+        /*
+        * Update the task description using the task uuid.
+        *   1) Fetches the task we want to update.
+        *   2) Sets the tasks description with the new description.
+        *   3) Save the task after performing the update to the database.
+        * */
+
+
+        // fetch the task from the database.
+        Task dbTask = this.getTaskByUuid(taskUuid);
+
+        // update the db task description.
+        dbTask.setDescription(request.description());
+
+        // save the task to the database.
+        this.taskRepository.save(dbTask);
 
     }
 

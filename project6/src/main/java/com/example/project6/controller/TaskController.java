@@ -3,10 +3,7 @@ package com.example.project6.controller;
 
 import com.example.project6.Service.AccountTasksService;
 import com.example.project6.Service.TaskService;
-import com.example.project6.dto.CreateTaskRequest;
-import com.example.project6.dto.TaskDto;
-import com.example.project6.dto.UpdateTaskRequest;
-import com.example.project6.dto.UpdateTaskTitleRequest;
+import com.example.project6.dto.*;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.util.entityAndDtoMappers.TaskMapper;
@@ -61,6 +58,17 @@ public class TaskController {
     public ResponseEntity updateTaskTitleByUuid(@RequestBody UpdateTaskTitleRequest request, @PathVariable UUID taskUuid){
         taskService.updateTaskTitleByUuid(request.title(), taskUuid);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+    @PatchMapping("/{taskUuid}/description")
+    public ResponseEntity updateTaskDescriptionByUuid(@RequestBody UpdateTaskDescriptionRequest request,
+                                                @PathVariable UUID taskUuid){
+        /*
+        * Handles HTTP PATCH requests to "/api/task/{taskUuid}"
+        * Updates the task description.
+        * Returns HTTP RESPONSE STATUS CODE 200 OK.
+        * */
+        taskService.updateTaskDescriptionByUuid(request, taskUuid);
+        return new ResponseEntity(HttpStatus.OK);
     }
 
     @DeleteMapping("/{taskUuid}")
