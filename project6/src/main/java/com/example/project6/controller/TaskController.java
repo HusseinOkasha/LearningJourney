@@ -6,6 +6,7 @@ import com.example.project6.Service.TaskService;
 import com.example.project6.dto.CreateTaskRequest;
 import com.example.project6.dto.TaskDto;
 import com.example.project6.dto.UpdateTaskRequest;
+import com.example.project6.dto.UpdateTaskTitleRequest;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.util.entityAndDtoMappers.TaskMapper;
@@ -54,6 +55,12 @@ public class TaskController {
         * */
         taskService.updateTaskByTaskUuid(TaskMapper.updateTaskRequestToTaskEntity(request), taskUuid);
         return new ResponseEntity(HttpStatus.OK);
+    }
+
+    @PatchMapping("/{taskUuid}/title")
+    public ResponseEntity updateTaskTitleByUuid(@RequestBody UpdateTaskTitleRequest request, @PathVariable UUID taskUuid){
+        taskService.updateTaskTitleByUuid(request.title(), taskUuid);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/{taskUuid}")

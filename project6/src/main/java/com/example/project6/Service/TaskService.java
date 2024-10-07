@@ -163,6 +163,67 @@ public class TaskService {
         transactionsRepository.transactionWrite(transactionWriteRequest);
     }
 
+    public void updateTaskTitleByUuid(String title, UUID taskUuid){
+        /*
+         * It tries to update task title by uuid.
+         *   1) Fetches the task to be updated from the database, set the title to the updated title,
+         *   2) Fetches task account links from the database,
+         *       then updates taskTitle.
+         *   3) Fetches account task links from the database,
+         *       then updates the task title.
+         *   4) Creates a write transaction to save the updates in Task to the database,
+         *        TaskAccountLinks and AccountTaskLinks.
+         * */
+
+        // fetch the task from the database.
+        Task dbTask = this.getTaskByUuid(taskUuid);
+
+        // update the dbTask title.
+        dbTask.setTitle(title);
+        // fetch task account links from the database.
+        List<TaskAccountLink> taskAccountLinks = taskAccountsService.getTaskAccounts(taskUuid);
+
+        // update common attributes between task entity and TaskAccountLink entity.
+        taskAccountLinks.forEach(
+                (taskAccountLink)->
+                        taskAccountLink.setTaskTitle(title) // update taskTitle in TaskAccountLink.
+        );
+
+        // fetch all AccountTaskLinks from the database.
+        List<AccountTaskLink> accountTaskLinks = taskAccountLinks
+                .stream()
+                .map(
+                        (taskAccountLink)->
+                                accountTasksService
+                                        .getByAccountUuidAndTaskUuid(
+                                                taskAccountLink.getAccountUuid(), taskUuid
+                                        )
+                )
+                .toList();
+
+        // update common attributes between task entity and account task link entity.
+        accountTaskLinks.forEach(
+                accountTaskLink ->
+                        accountTaskLink.setTaskTitle(title) // update task title in account task link.
+        );
+
+        // create write transaction request.
+        TransactionWriteRequest transactionWriteRequest = new TransactionWriteRequest();
+
+        // add the task it's self to be saved inside the transaction.
+        transactionWriteRequest.addPut(dbTask);
+
+        // add task account links to be saved inside the transaction.
+        taskAccountLinks.forEach(transactionWriteRequest::addPut);
+
+        // add account task links to be saved inside the transaction.
+        accountTaskLinks.forEach(transactionWriteRequest::addPut);
+
+        // fire the transaction to the database
+        transactionsRepository.transactionWrite(transactionWriteRequest);
+
+    }
+
     public void deleteTaskByUuid(UUID taskUuid) {
         // task to be deleted.
         Task task = Task
