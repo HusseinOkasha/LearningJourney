@@ -25,7 +25,7 @@ public class AccountTasksController {
     @GetMapping("/{accountUuid}/tasks")
     public ResponseEntity<List<AccountTaskLink>> getTasksByAccountUuid(@PathVariable UUID accountUuid){
         /*
-         * Handle HTTP GET requests to api/task/account/{accountUuid}
+         * Handle HTTP GET requests to api/account/{accountUuid}/tasks
          * In case of success it returns:
          *   - list of "AccountTaskLink" represents all task of the specified account.
          *   - HTTP STATUS CODE 200 OK.
