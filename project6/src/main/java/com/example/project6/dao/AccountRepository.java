@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -32,12 +33,25 @@ public class AccountRepository {
     }
 
     public List<Account> getAllByRole(Role role){
+
         DynamoDBQueryExpression<Account> queryExpression = new DynamoDBQueryExpression<Account>()
-                .withIndexName("GSI1") // Specify the GSI name
+                .withIndexName("ROLE_INDEX") // Specify the GSI name
                 .withConsistentRead(false) // GSI queries cannot be strongly consistent
-                .withKeyConditionExpression("GSI1PK = :gsiPkValue") // Define the condition for the GSI partition key
-                .withExpressionAttributeValues(Map.of(":gsiPkValue", new AttributeValue().withS(role.toString()))); // Provide the value for gsi_pk
+                .withExpressionAttributeNames(Map.of("#r", "role" ))
+                .withExpressionAttributeValues(Map.of(":roleValue", new AttributeValue().withS(role.toString()))) // Provide the value for gsi_pk
+                .withKeyConditionExpression("#r = :roleValue"); // Define the condition for the GSI partition key
+
         return  dynamoDBMapper.query(Account.class, queryExpression);
+    }
+
+    public Optional<Account> findByEmail(String email){
+        DynamoDBQueryExpression<Account> queryExpression = new DynamoDBQueryExpression<Account>()
+                .withIndexName("EMAIL_INDEX") // Specify the GSI name
+                .withConsistentRead(false) // GSI queries cannot be strongly consistent
+                .withKeyConditionExpression("email = :gsiPkValue") // Define the condition for the GSI partition key
+                .withExpressionAttributeValues(Map.of(":gsiPkValue", new AttributeValue().withS(email))); // Provide the value for gsi_pk
+        List<Account> result = dynamoDBMapper.query(Account.class, queryExpression);
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
     public void deleteByAccountUuid(Account account) {

@@ -7,7 +7,6 @@ import com.example.project6.exception.NotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.io.NotActiveException;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,7 +20,7 @@ public class AccountService {
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
-    public Account createAccount(Account account){
+    public Account save(Account account){
         // generate account uuid.
         account.generateAccountUuid();
 
@@ -46,6 +45,12 @@ public class AccountService {
     public Account getAccountByUuid(UUID uuid) {
         Account account  = Account.builder().withAccountUuid(uuid).build();
         return accountRepository.load(account);
+    }
+
+    public Account getAccountByEmail(String email){
+        return accountRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("couldn't find account with email: " + email));
     }
 
     public List<Account> getAllEmployees() {

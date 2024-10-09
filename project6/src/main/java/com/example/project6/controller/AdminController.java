@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,7 +35,7 @@ public class AdminController {
         // convert create account request to Account entity.
         Account account = AccountMapper.createAccountRequestToAccountEntity(createAccountRequest);
 
-        Account createdAccount = accountService.createAccount(account);
+        Account createdAccount = accountService.save(account);
 
         // convert the created account into profile dto.
         ProfileDto profileDto = AccountMapper.AccountEntityToAccountProfileDto(createdAccount);

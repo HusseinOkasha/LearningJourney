@@ -32,7 +32,7 @@ public class EmployeeController {
         * returns the created account.
         * */
         Account createdAccount = accountService
-                .createAccount(
+                .save(
                         // converts createAccountRequest to Account entity.
                         AccountMapper.createAccountRequestToAccountEntity(createAccountRequest)
                 );

@@ -81,10 +81,12 @@ public class Account {
     public void setName(String name) {
         this.name = name;
     }
-    @DynamoDBAttribute(attributeName = "email")
+
+    @DynamoDBIndexHashKey(globalSecondaryIndexName = "EMAIL_INDEX", attributeName = "email")
     public String getEmail() {
         return email;
     }
+
 
     public void setEmail(String email) {
         this.email = email;
@@ -100,7 +102,7 @@ public class Account {
     }
 
     @DynamoDBTypeConvertedEnum
-    @DynamoDBIndexHashKey(globalSecondaryIndexName = "GSI1", attributeName = "GSI1PK")
+    @DynamoDBIndexHashKey(globalSecondaryIndexName = "ROLE_INDEX", attributeName = "role")
     public Role getRole() {
         return role;
     }
