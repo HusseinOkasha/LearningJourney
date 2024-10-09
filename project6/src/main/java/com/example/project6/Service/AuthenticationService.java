@@ -4,6 +4,7 @@ import com.example.project6.dto.AuthenticationResponse;
 import com.example.project6.dto.RegisterRequest;
 import com.example.project6.entity.Account;
 import com.example.project6.exception.NotFoundException;
+import com.example.project6.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.security.core.Authentication;
@@ -68,12 +69,15 @@ public class AuthenticationService {
         * */
 
         // fetch the authentication object.
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
 
-        // extract the email from the authentication object.
-        String accountUuid = authentication.getName();
+        // extract the accountUuid from the authentication object.
+        UUID accountUuid = userDetails.getAccountUuid();
 
         // fetch the account corresponding to the extracted email
-        return accountService.getAccountByUuid(UUID.fromString(accountUuid));
+        return accountService.getAccountByUuid(accountUuid);
     }
 }

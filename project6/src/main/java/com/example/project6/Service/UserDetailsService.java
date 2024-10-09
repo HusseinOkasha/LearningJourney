@@ -18,7 +18,7 @@ public class UserDetailsService implements org.springframework.security.core.use
 
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public CustomUserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Account account = accountService.getAccountByEmail(username);
         return new CustomUserDetails(account);
 

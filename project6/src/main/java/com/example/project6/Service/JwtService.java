@@ -1,5 +1,6 @@
 package com.example.project6.Service;
 
+import com.example.project6.security.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
@@ -14,6 +15,7 @@ import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -26,8 +28,8 @@ public class JwtService {
         this.env = env;
     }
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public UUID extractAccountUuid(String token) {
+        return UUID.fromString(extractClaim(token, Claims::getSubject));
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -46,11 +48,11 @@ public class JwtService {
                 .compact();
 
     }
-    public boolean isTokenValid(String token, UserDetails userDetails) {
+    public boolean isTokenValid(String token, CustomUserDetails userDetails) {
 
         // checks that the token belongs to the given user && if the token is expired.
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        final UUID accountUuid = extractAccountUuid(token);
+        return (accountUuid.equals(userDetails.getAccountUuid())) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {

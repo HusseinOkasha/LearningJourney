@@ -30,4 +30,6 @@ public class CustomUserDetails implements UserDetails {
     public String getUsername() {
         return account.getEmail();
     }
+
+    public UUID getAccountUuid(){return account.getAccountUuid();}
 }

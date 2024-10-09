@@ -26,10 +26,10 @@ public class TaskController {
         this.accountTasksService = accountTasksService;
     }
 
-    @PostMapping("/{accountUuid}")
-    public void addTask(@RequestBody CreateTaskRequest request, @PathVariable UUID accountUuid){
+    @PostMapping
+    public void addTask(@RequestBody CreateTaskRequest request){
         Task task = TaskMapper.createTaskRequestToTaskEntity(request);
-        taskService.addTaskToAccount(accountUuid, task);
+        taskService.addTaskToAccount(task);
     }
 
     @GetMapping("/{taskUuid}")

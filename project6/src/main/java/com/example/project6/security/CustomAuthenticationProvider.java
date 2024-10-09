@@ -27,9 +27,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String email = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        UserDetails userDetails =  userDetailsService.loadUserByUsername(email);
+        CustomUserDetails customUserDetails =  userDetailsService.loadUserByUsername(email);
 
-        return checkPassword(userDetails, password, bCryptPasswordEncoder);
+        return checkPassword(customUserDetails, password, bCryptPasswordEncoder);
     }
 
     @Override
@@ -37,11 +37,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 
-    private Authentication checkPassword(UserDetails userDetails, String rawPassword, PasswordEncoder encoder) {
+    private Authentication checkPassword(CustomUserDetails customUserDetails, String rawPassword, PasswordEncoder encoder) {
 
-        if(encoder.matches(rawPassword, userDetails.getPassword())){
-            return new UsernamePasswordAuthenticationToken(userDetails.getUsername(), userDetails.getPassword(),
-                    userDetails.getAuthorities());
+        if(encoder.matches(rawPassword, customUserDetails.getPassword())){
+            return new UsernamePasswordAuthenticationToken(
+                    customUserDetails.getAccountUuid(),
+                    customUserDetails.getPassword(),
+                    customUserDetails.getAuthorities()
+            );
         }
         else{
             throw new BadCredentialsException("Bad Credentials");

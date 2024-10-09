@@ -1,5 +1,6 @@
 package com.example.project6.security;
 
+import com.example.project6.Service.AccountService;
 import com.example.project6.Service.JwtService;
 import com.example.project6.Service.UserDetailsService;
 import jakarta.servlet.FilterChain;
@@ -16,18 +17,18 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
+    private final AccountService accountService;
 
     @Autowired
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JwtService jwtService, AccountService accountService) {
         this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
-
+        this.accountService = accountService;
     }
 
     @Override
@@ -39,7 +40,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwtToken;
-        final String userEmail;
 
         // checks that the authentication header contains a bearer token.
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -52,11 +52,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         jwtToken = authHeader.substring(7);
 
         //extract the user email from the jwt token.
-        userEmail = jwtService.extractUsername(jwtToken);
+        UUID accountUuid = jwtService.extractAccountUuid(jwtToken);
 
         // check if the user is already authenticated.
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            CustomUserDetails userDetails = new CustomUserDetails(this.accountService.getAccountByUuid(accountUuid));
 
             if (jwtService.isTokenValid(jwtToken, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

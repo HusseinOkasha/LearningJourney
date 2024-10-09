@@ -13,6 +13,9 @@ import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
 import com.example.project6.exception.NotFoundException;
+import com.example.project6.security.CustomUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 
@@ -24,18 +27,20 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final AccountService accountService;
+    private final AuthenticationService authenticationService;
     private final TaskAccountsService taskAccountsService;
     private final AccountTasksService accountTasksService;
     private final TransactionsRepository transactionsRepository;
 
     public TaskService(TaskRepository taskRepository,
-                       AccountService accountService,
+                       AccountService accountService, AuthenticationService authenticationService,
                        TaskAccountsService taskAccountsService,
                        TransactionsRepository transactionsRepository,
                        AccountTasksService accountTasksService) {
 
         this.taskRepository = taskRepository;
         this.accountService = accountService;
+        this.authenticationService = authenticationService;
         this.taskAccountsService = taskAccountsService;
         this.accountTasksService = accountTasksService;
         this.transactionsRepository = transactionsRepository;
@@ -49,9 +54,9 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public void addTaskToAccount(UUID accountUuid, Task task){
-        // fetch the account from the database.
-        Account dbAccount = accountService.getAccountByUuid(accountUuid);
+    public void addTaskToAccount(Task task){
+        // get the currently authenticated account.
+        Account account = authenticationService.getAuthenticatedAccount();
 
         // create task uuid if it isn't created.
         if(task.getTaskUuid() == null){
@@ -68,9 +73,9 @@ public class TaskService {
 
         // create Account_Task_Link
         AccountTaskLink accountTaskLink = AccountTaskLink.builder()
-                .withAccountUuid(accountUuid)
+                .withAccountUuid(account.getAccountUuid())
                 .withTaskUuid(taskUuid)
-                .withAccountName(dbAccount.getName())
+                .withAccountName(account.getName())
                 .withTaskTitle(task.getTitle())
                 .build();
 
@@ -80,10 +85,10 @@ public class TaskService {
         // create Task_Account_Link
         TaskAccountLink taskAccountLink = TaskAccountLink.builder()
                 .withPk(String.format("TASK#%s", taskUuid))
-                .withSk(String.format("ACCOUNT#%s", accountUuid))
-                .withAccountUuid(accountUuid)
+                .withSk(String.format("ACCOUNT#%s", account.getAccountUuid()))
+                .withAccountUuid(account.getAccountUuid())
                 .withTaskUuid(taskUuid)
-                .withTaskTitle(dbAccount.getName())
+                .withTaskTitle(task.getTitle())
                 .build();
 
         // add saving Task_Account_Link to the transaction.
