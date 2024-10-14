@@ -5,7 +5,6 @@ import com.amazonaws.services.dynamodbv2.datamodeling.*;
 
 import com.example.project6.Enum.EntityType;
 import com.example.project6.Enum.TaskStatus;
-import com.example.project6.util.entityAndDtoMappers.UUIDConverter;
 
 import java.util.UUID;
 

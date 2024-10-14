@@ -4,11 +4,12 @@ package com.example.project6.entity;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.example.project6.Enum.EntityType;
 import com.example.project6.Enum.Role;
-import com.example.project6.util.entityAndDtoMappers.UUIDConverter;
+import com.example.project6.util.entityAndDtoMappers.UUIDConverter2;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 import java.util.UUID;
 
-@DynamoDBTable(tableName = "app")
+@DynamoDbBean
 public class Account {
 
     // Composite Primary Key
@@ -45,7 +46,7 @@ public class Account {
         return new Builder();
     }
 
-    @DynamoDBHashKey(attributeName = "pk")
+    @DynamoDbPartitionKey
     public String getPk() {
         return String.format("%s#%s", EntityType.ACCOUNT, accountUuid) ;
     }
@@ -54,7 +55,7 @@ public class Account {
         this.pk = pk;
     }
 
-    @DynamoDBRangeKey(attributeName = "sk")
+    @DynamoDbSortKey
     public String getSk() {
         return String.format("%s#%s", EntityType.ACCOUNT, accountUuid) ;
     }
@@ -63,8 +64,8 @@ public class Account {
         this.sk = sk;
     }
 
-    @DynamoDBAttribute(attributeName = "account_uuid")
-    @DynamoDBTypeConverted(converter = UUIDConverter.class)
+    @DynamoDbAttribute(value = "account_uuid")
+    @DynamoDbConvertedBy(UUIDConverter2.class)
     public UUID getAccountUuid() {
         return accountUuid;
     }
@@ -73,7 +74,7 @@ public class Account {
         this.accountUuid = accountUuid;
     }
 
-    @DynamoDBAttribute(attributeName = "name")
+    @DynamoDbAttribute(value = "name")
     public String getName() {
         return name;
     }
@@ -82,7 +83,8 @@ public class Account {
         this.name = name;
     }
 
-    @DynamoDBIndexHashKey(globalSecondaryIndexName = "EMAIL_INDEX", attributeName = "email")
+    @DynamoDbSecondaryPartitionKey(indexNames = "EMAIL_INDEX")
+    @DynamoDbAttribute(value = "email")
     public String getEmail() {
         return email;
     }
@@ -92,7 +94,7 @@ public class Account {
         this.email = email;
     }
 
-    @DynamoDBAttribute(attributeName = "password")
+    @DynamoDbAttribute(value = "password")
     public String getPassword() {
         return password;
     }
@@ -102,7 +104,8 @@ public class Account {
     }
 
     @DynamoDBTypeConvertedEnum
-    @DynamoDBIndexHashKey(globalSecondaryIndexName = "ROLE_INDEX", attributeName = "role")
+    @DynamoDbSecondaryPartitionKey(indexNames = "ROLE_INDEX")
+    @DynamoDbAttribute(value = "role")
     public Role getRole() {
         return role;
     }
