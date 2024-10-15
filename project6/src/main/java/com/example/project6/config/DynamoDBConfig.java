@@ -1,12 +1,5 @@
 package com.example.project6.config;
 
-
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.example.project6.entity.Account;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
@@ -63,41 +56,17 @@ public class DynamoDBConfig {
         return enhancedClient.table("app", TableSchema.fromBean(Account.class));
     }
 
-//    @Bean
-//    public DynamoDbTable<Task> taskTable(DynamoDbEnhancedClient enhancedClient) {
-//        return enhancedClient.table("app", TableSchema.fromBean(Task.class));
-//    }
-//
-//    @Bean
-//    public DynamoDbTable<AccountTaskLink> accountTaskTable(DynamoDbEnhancedClient enhancedClient) {
-//        return enhancedClient.table("app", TableSchema.fromBean(AccountTaskLink.class));
-//    }
-//    @Bean
-//    public DynamoDbTable<TaskAccountLink> taskAccountTable(DynamoDbEnhancedClient enhancedClient) {
-//        return enhancedClient.table("app", TableSchema.fromBean(TaskAccountLink.class));
-//    }
     @Bean
-    public DynamoDBMapper dynamoDBMapper() {
-        return new DynamoDBMapper(buildAmazonDynamoDB());
+    public DynamoDbTable<Task> taskTable(DynamoDbEnhancedClient enhancedClient) {
+        return enhancedClient.table("app", TableSchema.fromBean(Task.class));
     }
 
-    private AmazonDynamoDB buildAmazonDynamoDB() {
-        return AmazonDynamoDBClientBuilder
-                .standard()
-                .withEndpointConfiguration(
-                        new AwsClientBuilder.EndpointConfiguration(
-                                amazonDynamoDBEndpoint,
-                                region
-                        )
-                )
-                .withCredentials(
-                        new AWSStaticCredentialsProvider(
-                                new BasicAWSCredentials(
-                                        amazonAWSAccessKey,
-                                        amazonAWSSecretKey
-                                )
-                        )
-                )
-                .build();
+    @Bean
+    public DynamoDbTable<AccountTaskLink> accountTaskTable(DynamoDbEnhancedClient enhancedClient) {
+        return enhancedClient.table("app", TableSchema.fromBean(AccountTaskLink.class));
+    }
+    @Bean
+    public DynamoDbTable<TaskAccountLink> taskAccountTable(DynamoDbEnhancedClient enhancedClient) {
+        return enhancedClient.table("app", TableSchema.fromBean(TaskAccountLink.class));
     }
 }

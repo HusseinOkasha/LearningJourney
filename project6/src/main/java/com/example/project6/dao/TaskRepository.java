@@ -1,26 +1,25 @@
 package com.example.project6.dao;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.example.project6.entity.Account;
 import com.example.project6.entity.Task;
 import org.springframework.stereotype.Repository;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 
 import java.util.Optional;
 
 @Repository
 public class TaskRepository {
-    final private DynamoDBMapper dynamoDBMapper ;
+    final private DynamoDbTable<Task> taskTable;
 
-    public TaskRepository(DynamoDBMapper dynamoDBMapper) {
-        this.dynamoDBMapper = dynamoDBMapper;
+    public TaskRepository(DynamoDbTable<Task> taskTable) {
+        this.taskTable = taskTable;
     }
-
+    // TODO: change return type to void.
     public Task save(Task task){
-        dynamoDBMapper.save(task);
+        taskTable.putItem(task);
         return task;
     }
     public Optional<Task> load(Task task){
-        return Optional.ofNullable(dynamoDBMapper.load(task));
+        return Optional.ofNullable(taskTable.getItem(task));
 
     }
 }

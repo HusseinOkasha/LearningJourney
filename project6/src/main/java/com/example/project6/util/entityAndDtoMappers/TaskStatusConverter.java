@@ -1,27 +1,25 @@
 package com.example.project6.util.entityAndDtoMappers;
 
+import com.example.project6.Enum.TaskStatus;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.util.UUID;
-
-public class UUIDConverter2 implements AttributeConverter<UUID> {
-
+public class TaskStatusConverter implements AttributeConverter<TaskStatus> {
     @Override
-    public AttributeValue transformFrom(UUID uuid) {
-        return AttributeValue.builder().s(uuid.toString()).build();
+    public AttributeValue transformFrom(TaskStatus taskStatus) {
+        return AttributeValue.builder().s(taskStatus.toString()).build();
     }
 
     @Override
-    public UUID transformTo(AttributeValue attributeValue) {
-        return UUID.fromString(attributeValue.s());
+    public TaskStatus transformTo(AttributeValue attributeValue) {
+        return TaskStatus.valueOf(attributeValue.s());
     }
 
     @Override
-    public EnhancedType<UUID> type() {
-        return EnhancedType.of(UUID.class);
+    public EnhancedType<TaskStatus> type() {
+        return EnhancedType.of(TaskStatus.class);
     }
 
     @Override

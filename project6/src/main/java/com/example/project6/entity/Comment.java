@@ -1,32 +1,25 @@
 package com.example.project6.entity;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.*;
+
 import com.example.project6.Enum.EntityType;
 import com.example.project6.util.entityAndDtoMappers.UUIDConverter;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 import java.util.UUID;
 
-@DynamoDBTable(tableName = "app")
+@DynamoDbBean
 public class Comment {
     // Composite Primary Key
-    @DynamoDBHashKey
+
     private String pk; // partition key
-    @DynamoDBRangeKey
     private String sk; // sort key
 
     // **** Comment Attributes ****
-    @DynamoDBAttribute
-    @DynamoDBTypeConverted(converter = UUIDConverter.class)
     private UUID commentUuid;
-
-    @DynamoDBAttribute
     private String body;
-
-    @DynamoDBAttribute
-    @DynamoDBTypeConverted(converter = UUIDConverter.class)
     private UUID creatorAccountUuid;
 
-    private Comment(Builder builder){
+    private Comment(Builder builder) {
         // **** Composite primary key ****
         this.pk = builder.pk;
         this.sk = builder.sk;
@@ -47,22 +40,29 @@ public class Comment {
         return new Builder();
     }
 
+    @DynamoDbPartitionKey
     public String getPk() {
         return pk;
     }
 
+    @DynamoDbSortKey
     public String getSk() {
         return sk;
     }
 
+    @DynamoDbConvertedBy(UUIDConverter.class)
+    @DynamoDbAttribute(value="comment_uuid")
     public UUID getCommentUuid() {
         return commentUuid;
     }
 
+    @DynamoDbAttribute(value = "body")
     public String getBody() {
         return body;
     }
 
+    @DynamoDbConvertedBy(UUIDConverter.class)
+    @DynamoDbAttribute(value="creator_account_uuid")
     public UUID getCreatorAccountUuid() {
         return creatorAccountUuid;
     }
@@ -82,25 +82,28 @@ public class Comment {
         }
 
         // **** Composite Key ****
-        public Builder withPk(String pk){
+        public Builder withPk(String pk) {
             this.pk = String.format("%s#%s", EntityType.ACCOUNT, pk);
             return this;
         }
-        public Builder withSk(String sk){
+
+        public Builder withSk(String sk) {
             this.sk = String.format("%s#%s", EntityType.ACCOUNT, sk);
             return this;
         }
 
         // **** CommentAttributes ****
-        public Builder withBody(String body){
+        public Builder withBody(String body) {
             this.body = body;
             return this;
         }
-        public Builder withUuid(UUID uuid){
+
+        public Builder withUuid(UUID uuid) {
             this.commentUuid = uuid;
             return this;
         }
-        public Builder withCreatorAccountUuid(UUID accountUuid){
+
+        public Builder withCreatorAccountUuid(UUID accountUuid) {
             this.creatorAccountUuid = accountUuid;
             return this;
         }

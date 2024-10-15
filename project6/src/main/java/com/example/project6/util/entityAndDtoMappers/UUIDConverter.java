@@ -1,18 +1,31 @@
 package com.example.project6.util.entityAndDtoMappers;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConvertedEnum;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
+import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
+import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
+import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.UUID;
 
-public class UUIDConverter implements DynamoDBTypeConverter<String, UUID> {
+public class UUIDConverter implements AttributeConverter<UUID> {
+
     @Override
-    public String convert(UUID uuid) {
-        return uuid.toString();
+    public AttributeValue transformFrom(UUID uuid) {
+        return AttributeValue.builder().s(uuid.toString()).build();
     }
 
     @Override
-    public UUID unconvert(String s) {
-        return UUID.fromString(s);
+    public UUID transformTo(AttributeValue attributeValue) {
+        return UUID.fromString(attributeValue.s());
+    }
+
+    @Override
+    public EnhancedType<UUID> type() {
+        return EnhancedType.of(UUID.class);
+    }
+
+    @Override
+    public AttributeValueType attributeValueType() {
+        return AttributeValueType.S;
     }
 }

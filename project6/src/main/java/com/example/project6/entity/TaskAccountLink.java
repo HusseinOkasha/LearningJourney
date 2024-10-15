@@ -1,14 +1,15 @@
 package com.example.project6.entity;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+
 import com.example.project6.Enum.EntityType;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
 import java.util.UUID;
 
-@DynamoDBTable(tableName = "app")
+@DynamoDbBean
 public class TaskAccountLink {
 
     // Composite Primary Key
@@ -47,32 +48,32 @@ public class TaskAccountLink {
         return new Builder();
     }
 
-    @DynamoDBHashKey
+    @DynamoDbPartitionKey
     public String getPk() {
         return String.format("%s#%s", EntityType.TASK, taskUuid) ;
     }
 
-    @DynamoDBRangeKey
+    @DynamoDbSortKey
     public String getSk() {
         return String.format("%s#%s", EntityType.ACCOUNT, accountUuid == null ? "": accountUuid) ;
     }
 
-    @DynamoDBAttribute(attributeName = "account_name")
+    @DynamoDbAttribute(value = "account_name")
     public String getAccountName() {
         return accountName;
     }
 
-    @DynamoDBAttribute(attributeName = "account_uuid")
+    @DynamoDbAttribute(value = "account_uuid")
     public UUID getAccountUuid() {
         return accountUuid;
     }
 
-    @DynamoDBAttribute(attributeName = "task_title")
+    @DynamoDbAttribute(value = "task_title")
     public String getTaskTitle() {
         return taskTitle;
     }
 
-    @DynamoDBAttribute(attributeName = "task_uuid")
+    @DynamoDbAttribute(value = "task_uuid")
     public UUID getTaskUuid() {
         return taskUuid;
     }

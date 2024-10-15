@@ -1,14 +1,17 @@
 package com.example.project6.entity;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.*;
+
 
 
 import com.example.project6.Enum.EntityType;
 import com.example.project6.Enum.TaskStatus;
+import com.example.project6.util.entityAndDtoMappers.TaskStatusConverter;
+import com.example.project6.util.entityAndDtoMappers.UUIDConverter;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 import java.util.UUID;
 
-@DynamoDBTable(tableName = "app")
+@DynamoDbBean
 public class Task {
     // Composite Primary Key
     private String pk; // partition key
@@ -42,32 +45,34 @@ public class Task {
         return new Builder();
     }
 
-    @DynamoDBHashKey
+    @DynamoDbPartitionKey
     public String getPk() {
         return String.format("%s#%s", EntityType.TASK, taskUuid);
     }
 
-    @DynamoDBRangeKey
+    @DynamoDbSortKey
     public String getSk() {
         return String.format("%s#%s", EntityType.TASK, taskUuid);
     }
 
-    @DynamoDBAttribute(attributeName = "task_uuid")
+    @DynamoDbAttribute(value = "task_uuid")
+    @DynamoDbConvertedBy(UUIDConverter.class)
     public UUID getTaskUuid() {
         return taskUuid;
     }
 
-    @DynamoDBAttribute(attributeName = "task_title")
+    @DynamoDbAttribute(value = "task_title")
     public String getTitle() {
         return title;
     }
 
-    @DynamoDBAttribute(attributeName = "task_description")
+    @DynamoDbAttribute(value = "task_description")
     public String getDescription() {
         return description;
     }
-    @DynamoDBTypeConvertedEnum
-    @DynamoDBAttribute(attributeName = "task_status")
+
+    @DynamoDbConvertedBy(TaskStatusConverter.class)
+    @DynamoDbAttribute(value = "task_status")
     public TaskStatus getStatus() {
         return status;
     }

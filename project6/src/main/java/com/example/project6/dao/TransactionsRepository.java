@@ -1,24 +1,19 @@
 package com.example.project6.dao;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.datamodeling.TransactionLoadRequest;
-import com.amazonaws.services.dynamodbv2.datamodeling.TransactionWriteRequest;
 import org.springframework.stereotype.Repository;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
-import java.util.List;
 @Repository
 public class TransactionsRepository {
 
-    private final DynamoDBMapper dynamoDBMapper;
+    private final DynamoDbClient dynamoDbClient;
 
-    public TransactionsRepository(DynamoDBMapper dynamoDBMapper) {
-        this.dynamoDBMapper = dynamoDBMapper;
+    public TransactionsRepository(DynamoDbClient dynamoDbClient) {
+        this.dynamoDbClient = dynamoDbClient;
     }
 
-    public void transactionWrite(TransactionWriteRequest transactionWriteRequest){
-        dynamoDBMapper.transactionWrite(transactionWriteRequest);
-    }
-    public List<Object> transactionLoad(TransactionLoadRequest transactionLoadRequest){
-        return dynamoDBMapper.transactionLoad(transactionLoadRequest);
+    public void transactionWrite(TransactWriteItemsRequest transactWriteItemsRequest){
+        dynamoDbClient.transactWriteItems(transactWriteItemsRequest);
     }
 }

@@ -1,10 +1,11 @@
 package com.example.project6.entity;
 
 
-import com.amazonaws.services.dynamodbv2.datamodeling.*;
+
 import com.example.project6.Enum.EntityType;
 import com.example.project6.Enum.Role;
-import com.example.project6.util.entityAndDtoMappers.UUIDConverter2;
+import com.example.project6.util.entityAndDtoMappers.RoleConverter;
+import com.example.project6.util.entityAndDtoMappers.UUIDConverter;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 import java.util.UUID;
@@ -65,7 +66,7 @@ public class Account {
     }
 
     @DynamoDbAttribute(value = "account_uuid")
-    @DynamoDbConvertedBy(UUIDConverter2.class)
+    @DynamoDbConvertedBy(UUIDConverter.class)
     public UUID getAccountUuid() {
         return accountUuid;
     }
@@ -103,7 +104,7 @@ public class Account {
         this.password = password;
     }
 
-    @DynamoDBTypeConvertedEnum
+    @DynamoDbConvertedBy(RoleConverter.class)
     @DynamoDbSecondaryPartitionKey(indexNames = "ROLE_INDEX")
     @DynamoDbAttribute(value = "role")
     public Role getRole() {
