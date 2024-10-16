@@ -15,6 +15,8 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class TaskService {
@@ -67,16 +69,6 @@ public class TaskService {
         // get the task uuid.
         UUID taskUuid = task.getTaskUuid();
 
-        // Convert the Task object into a DynamoDB-compatible map format.
-        // The second argument (false) indicates that fields with null values in the Task object
-        // should be excluded from the resulting map. This ensures that only non-null fields
-        // are included when storing the item in DynamoDB, as DynamoDB does not store attributes with null values.
-        // The map is then used to create a Put request for adding the Task item to the "app" table.
-        Put addTask = Put.builder()
-                .tableName("app")
-                .item(taskTable.tableSchema().itemToMap(task, false))
-                .build();
-
         // create Account_Task_Link
         AccountTaskLink accountTaskLink = AccountTaskLink.builder()
                 .withAccountUuid(account.getAccountUuid())
@@ -85,44 +77,27 @@ public class TaskService {
                 .withTaskTitle(task.getTitle())
                 .build();
 
-        // Convert the AccountTaskLink object into a DynamoDB-compatible map format.
-        // The second argument (false) indicates that fields with null values in the Task object
-        // should be excluded from the resulting map. This ensures that only non-null fields
-        // are included when storing the item in DynamoDB, as DynamoDB does not store attributes with null values.
-        // The map is then used to create a Put request for adding the Task item to the "app" table.
-        Put addAccountTaskLink = Put
-                .builder()
-                .tableName("app")
-                .item(accountTaskLinkTable.tableSchema().itemToMap(accountTaskLink, false))
-                .build();
-
         // create Task_Account_Link
         TaskAccountLink taskAccountLink = TaskAccountLink.builder()
-                .withPk(String.format("TASK#%s", taskUuid))
-                .withSk(String.format("ACCOUNT#%s", account.getAccountUuid()))
                 .withAccountUuid(account.getAccountUuid())
                 .withAccountName(account.getName())
                 .withTaskUuid(taskUuid)
                 .withTaskTitle(task.getTitle())
                 .build();
 
-        // Convert the TaskAccountLink object into a DynamoDB-compatible map format.
-        // The second argument (false) indicates that fields with null values in the Task object
-        // should be excluded from the resulting map. This ensures that only non-null fields
-        // are included when storing the item in DynamoDB, as DynamoDB does not store attributes with null values.
-        // The map is then used to create a Put request for adding the Task item to the "app" table.
-        Put addTaskAccountLink = Put
-                .builder()
-                .tableName("app")
-                .item(taskAccountLinkTable.tableSchema().itemToMap(taskAccountLink, false))
-                .build();
-
+        // generate transact write item for the new task.
+        TransactWriteItem taskTransactWriteItem = generatePutTransactWriteItem(task);
+        List<TransactWriteItem> transactWriteItems = Stream
+                .of(
+                        accountTasksService.generatePutTransactWriteItem(accountTaskLink),// generate transact write item for the account task link
+                        taskAccountsService.generatePutTransactWriteItem(taskAccountLink),// generate transact write item for the task account link
+                        taskTransactWriteItem
+                )
+                .toList();
 
         // create write transaction request.
         TransactWriteItemsRequest transactWriteItemsRequest = TransactWriteItemsRequest.builder().transactItems(
-                TransactWriteItem.builder().put(addTask).build(),
-                TransactWriteItem.builder().put(addAccountTaskLink).build(),
-                TransactWriteItem.builder().put(addTaskAccountLink).build()
+               transactWriteItems
         ).build();
 
         // perform the transaction on the database.
@@ -146,8 +121,9 @@ public class TaskService {
          *       then update common attributes between task and task account link.
          *   3) Fetches account task links from the database,
          *       then update common attributes between task and account task link.
-         *   4) Creates a write transaction to save the updates in Task to the database,
-         *        TaskAccountLinks and AccountTaskLinks.
+         *   4) Creates a write transaction to save the updates in Task, TaskAccountLinks and AccountTaskLinks
+         *       to the database.
+         *
          * */
 
         // fetch the task from the database.
@@ -163,28 +139,17 @@ public class TaskService {
         List<AccountTaskLink> accountTaskLinks = fetchAndUpdateAccountTaskLinks(taskAccountLinks, dbTask);
 
         // create task transact item.
-        TransactWriteItem updateTaskEntity = TransactWriteItem
-                .builder()
-                .put(Put.builder()
-                        .tableName("app")
-                        .item(taskTable.tableSchema().itemToMap(dbTask, false))
-                        .build()
-                )
-                .build();
+        TransactWriteItem taskPutTransactWriteItem = generatePutTransactWriteItem(dbTask);
 
-        // create account task links transact items.
-        List<TransactWriteItem> updateAccountTasksTransactItems =
-                getTransactWriteItemsFromTaskAccountLinks(taskAccountLinks);
+        // create transact write items for account task links and task account links.
+        List<TransactWriteItem> transactWriteItems = Stream
+                .concat(
+                        taskAccountLinks.stream().map(taskAccountsService::generatePutTransactWriteItem),
+                        accountTaskLinks.stream().map(accountTasksService::generatePutTransactWriteItem))
+                .collect(Collectors.toList());
 
-        // create task account links transact items.
-        List<TransactWriteItem> updateTaskAccountTransactItems =
-                getTransactWriteItemsFromAccountTaskLinks(accountTaskLinks);
-
-        // create a list of all transact items (task, task account links, and account task links).
-        List<TransactWriteItem> transactWriteItems = new ArrayList<>();
-        transactWriteItems.addAll(updateAccountTasksTransactItems);
-        transactWriteItems.addAll(updateTaskAccountTransactItems);
-        transactWriteItems.add(updateTaskEntity);
+        // add task transact write to transact write items list.
+        transactWriteItems.add(taskPutTransactWriteItem);
 
         // create the transaction write request.
         TransactWriteItemsRequest transactWriteItemsRequest = TransactWriteItemsRequest.builder().transactItems(
@@ -203,8 +168,8 @@ public class TaskService {
          *       then updates taskTitle.
          *   3) Fetches account task links from the database,
          *       then updates the task title.
-         *   4) Creates a write transaction to save the updates in Task to the database,
-         *        TaskAccountLinks and AccountTaskLinks.
+         *   4) Creates a write transaction to save the updates in Task, TaskAccountLinks,
+         *       and AccountTaskLinks to the database.
          * */
 
         // fetch the task from the database.
@@ -218,28 +183,17 @@ public class TaskService {
         List<AccountTaskLink> accountTaskLinks = fetchAndUpdateAccountTaskLinks(taskAccountLinks, dbTask);
 
         // create task transact item.
-        TransactWriteItem updateTaskEntity = TransactWriteItem
-                .builder()
-                .put(Put.builder()
-                        .tableName("app")
-                        .item(taskTable.tableSchema().itemToMap(dbTask, false))
-                        .build()
-                )
-                .build();
+        TransactWriteItem taskPutTransactWriteItem = generatePutTransactWriteItem(dbTask);
 
-        // create account task links transact items.
-        List<TransactWriteItem> updateAccountTasksTransactItems =
-                getTransactWriteItemsFromTaskAccountLinks(taskAccountLinks);
+        // create transact write items for account task links and task account links.
+        List<TransactWriteItem> transactWriteItems = Stream
+                .concat(
+                        taskAccountLinks.stream().map(taskAccountsService::generatePutTransactWriteItem),
+                        accountTaskLinks.stream().map(accountTasksService::generatePutTransactWriteItem))
+                .collect(Collectors.toList());
 
-        // create task account links transact items.
-        List<TransactWriteItem> updateTaskAccountTransactItems =
-                getTransactWriteItemsFromAccountTaskLinks(accountTaskLinks);
-
-        // create a list of all transact items (task, task account links, and account task links).
-        List<TransactWriteItem> transactWriteItems = new ArrayList<>();
-        transactWriteItems.addAll(updateAccountTasksTransactItems);
-        transactWriteItems.addAll(updateTaskAccountTransactItems);
-        transactWriteItems.add(updateTaskEntity);
+        // add task transact write to transact write items list.
+        transactWriteItems.add(taskPutTransactWriteItem);
 
         // create the transaction write request.
         TransactWriteItemsRequest transactWriteItemsRequest = TransactWriteItemsRequest.builder().transactItems(
@@ -248,7 +202,6 @@ public class TaskService {
 
         // fire the transaction to the database
         transactionsRepository.transactionWrite(transactWriteItemsRequest);
-
     }
 
     public void updateTaskDescriptionByUuid(String description, UUID taskUuid) {
@@ -258,7 +211,6 @@ public class TaskService {
          *   2) Sets the tasks description with the new description.
          *   3) Save the task after performing the update to the database.
          * */
-
 
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
@@ -298,61 +250,41 @@ public class TaskService {
                 .build();
 
         // fetch all task account links from database.
-        List<TaskAccountLink> taskAccounts = taskAccountsService.getTaskAccounts(taskUuid);
+        List<TaskAccountLink> taskAccountLinks = taskAccountsService.getTaskAccounts(taskUuid);
 
+        // fetch all account task links from the database.
+        List<AccountTaskLink>accountTaskLinks = taskAccountLinks.stream().map(taskAccountLink ->
+                AccountTaskLink.builder()
+                        .withTaskUuid(taskAccountLink.getTaskUuid())
+                        .withAccountUuid(taskAccountLink.getAccountUuid())
+                        .build()
+        ).toList();
 
-        Map<String, AttributeValue> taskEntityKey = Map.of("pk", AttributeValue.builder().s(task.getPk()).build(),
-                "sk", AttributeValue.builder().s(task.getSk()).build());
+        // create transact write items for ( task account links & account task links).
+        List<TransactWriteItem> transactWriteItems = Stream.concat(
+                taskAccountLinks.stream().map(taskAccountsService::generateDeleteTransactWriteItem),
+                        accountTaskLinks.stream().map(accountTasksService::generateDeleteTransactWriteItem)
+                )
+                .collect(Collectors.toList());
 
-        TransactWriteItem deleteTaskWriteTransactionItem = TransactWriteItem
-                .builder()
-                .delete(
-                        Delete
-                                .builder()
-                                .tableName("app")
-                                .key(taskEntityKey)
-                                .build()
-                ).build();
+        // create transact write item for (task)
+        transactWriteItems.add(generateDeleteTransactWriteItem(task));
 
-        List<TransactWriteItem> toBeDeleted = new ArrayList<>();
-        toBeDeleted.add(deleteTaskWriteTransactionItem);
-
-        // delete links
-        taskAccounts.forEach((taskAccountLink) -> {
-            // delete task account link.
-            toBeDeleted.add(TransactWriteItem.builder().delete(
-                            Delete.builder()
-                                    .tableName("app")
-                                    .key(Map.of("pk", AttributeValue.builder().s(taskAccountLink.getPk()).build(),
-                                            "sk", AttributeValue.builder().s(taskAccountLink.getSk()).build()))
-                                    .build()
-                            )
-                    .build()
-            );
-
-            AccountTaskLink accountTaskLink = AccountTaskLink.builder()
-                    .withAccountUuid(taskAccountLink.getAccountUuid())
-                    .withTaskUuid(taskUuid)
-                    .build();
-
-            // delete task account link.
-            toBeDeleted.add(TransactWriteItem.builder().delete(
-                                    Delete.builder()
-                                            .tableName("app")
-                                            .key(Map.of("pk", AttributeValue.builder().s(accountTaskLink.getPk()).build(),
-                                                    "sk", AttributeValue.builder().s(accountTaskLink.getSk()).build()))
-                                            .build()
-                            )
-                            .build()
-            );
-
-        });
         // create the transaction write request.
         TransactWriteItemsRequest transactWriteItemsRequest = TransactWriteItemsRequest.builder().transactItems(
-                toBeDeleted
+                transactWriteItems
         ).build();
+
+        // fire the transaction.
         transactionsRepository.transactionWrite(transactWriteItemsRequest);
 
+    }
+
+    public TransactWriteItem generatePutTransactWriteItem(Task task){
+        return taskRepository.generatePutTransactWriteItem(task);
+    }
+    public TransactWriteItem generateDeleteTransactWriteItem(Task task){
+        return taskRepository.generateDeleteTransactWriteItem(task);
     }
 
     private List<TaskAccountLink> fetchAndUpdateTaskAccountLinks(Task updatedTask) {
@@ -400,49 +332,5 @@ public class TaskService {
                         accountTaskLink.setTaskTitle(updatedTask.getTitle()) // update task title in account task link.
         );
         return accountTaskLinks;
-    }
-
-    private List<TransactWriteItem> getTransactWriteItemsFromTaskAccountLinks(List<TaskAccountLink> taskAccountLinks) {
-        List<Put> updateTaskAccountLinks = taskAccountLinks
-                .stream()
-                .map((taskAccountLink) -> Put
-                        .builder()
-                        .tableName("app")
-                        .item(
-                                taskAccountLinkTable.tableSchema().itemToMap(taskAccountLink, false)
-                        )
-                        .build()
-                )
-                .toList();
-        return updateTaskAccountLinks.stream()
-                .map(taskAccountLink ->
-                        TransactWriteItem
-                                .builder()
-                                .put(taskAccountLink)
-                                .build()
-                )
-                .toList();
-    }
-
-    private List<TransactWriteItem> getTransactWriteItemsFromAccountTaskLinks(List<AccountTaskLink> accountTaskLinks) {
-        List<Put> updateTaskAccountLinks = accountTaskLinks
-                .stream()
-                .map((accountTaskLink) -> Put
-                        .builder()
-                        .tableName("app")
-                        .item(
-                                accountTaskLinkTable.tableSchema().itemToMap(accountTaskLink, false)
-                        )
-                        .build()
-                )
-                .toList();
-        return updateTaskAccountLinks.stream()
-                .map(taskAccountLink ->
-                        TransactWriteItem
-                                .builder()
-                                .put(taskAccountLink)
-                                .build()
-                )
-                .toList();
     }
 }

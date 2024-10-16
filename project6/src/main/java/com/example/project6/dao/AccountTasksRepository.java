@@ -9,9 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -66,4 +64,54 @@ public class AccountTasksRepository {
 
         return accountTaskLinkTable.getItem(accountTaskLink);
     }
+
+    public Put generatePutAction(AccountTaskLink accountTaskLink){
+        // Takes AccountTaskLink parameter and generates a Put action for it.
+        return Put
+                .builder()
+                .tableName("app")
+                .item(
+                        accountTaskLinkTable.tableSchema().itemToMap(accountTaskLink, false)
+                )
+                .build();
+    }
+    public Delete generateDeleteAction(AccountTaskLink accountTaskLink){
+        // takes Account task link parameter and generated a delete action for it.
+
+        // create a map containing the partition key and sort key.
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put("pk", AttributeValue.builder().s(accountTaskLink.getPk()).build());
+        key.put("sk", AttributeValue.builder().s(accountTaskLink.getSk()).build());
+
+        // create the delete action for the account task link.
+        return Delete.builder().tableName("app").key(key).build();
+    }
+
+    public TransactWriteItem generatePutTransactWriteItem(AccountTaskLink accountTaskLink){
+        // It takes Account task link entity as a parameter.
+        // Generates put action for the provided accountTaskLink.
+        // Generates a TransactWriteItem from the generated put action.
+
+        // generates put action for the provided account task link.
+        Put putAction = generatePutAction(accountTaskLink);
+
+        // generates TransactWriteItem from the generated put action.
+        return TransactWriteItem
+                .builder()
+                .put(putAction)
+                .build();
+    }
+    public TransactWriteItem generateDeleteTransactWriteItem(AccountTaskLink accountTaskLink){
+        // It takes Account task link entity as a parameter.
+        // Generates delete action for the provided accountTaskLink.
+        // Generates a TransactWriteItem from the generated delete action.
+
+        // generates put action for the provided account task link.
+        Delete deleteAction = generateDeleteAction(accountTaskLink);
+        return TransactWriteItem.builder().delete(deleteAction).build();
+
+    }
+
+
+
 }
