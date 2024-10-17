@@ -113,13 +113,13 @@ public class Util {
                 .withName("Ahmed")
                 .withEmail("e3@email.com")
                 .withPassword("123")
-                .withRole(Role.ADMIN)
+                .withRole(Role.EMPLOYEE)
                 .build();
         Account employee2 = Account.builder()
                 .withName("Abdallah")
                 .withEmail("e4@email.com")
                 .withPassword("123")
-                .withRole(Role.ADMIN)
+                .withRole(Role.EMPLOYEE)
                 .build();
         return List.of(admin1, admin2, employee1, employee2);
     }
@@ -151,4 +151,5 @@ public class Util {
         assertThat(accessToken).isNotEmpty();
         return accessToken;
     }
+
 }
