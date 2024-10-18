@@ -25,7 +25,7 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ProfileDto createNewEmployee(@Valid @RequestBody CreateAccountRequest createAccountRequest){
+    public ResponseEntity<ProfileDto> createNewEmployee(@Valid @RequestBody CreateAccountRequest createAccountRequest){
         /*
         * Handles HTTP POST requests to "/api/admin/employees"
         * creates account with role employee.
@@ -38,21 +38,21 @@ public class EmployeeController {
                 );
 
         // converts Account entity to  account profile dto.
-        return AccountMapper.AccountEntityToAccountProfileDto(createdAccount);
+        return new ResponseEntity<>(AccountMapper.AccountEntityToAccountProfileDto(createdAccount), HttpStatus.CREATED);
     }
 
     @GetMapping("/{accountUuid}")
-    public ProfileDto getEmployeeByUuid(@PathVariable UUID accountUuid){
+    public ResponseEntity<ProfileDto> getEmployeeByUuid(@PathVariable UUID accountUuid){
         /*
         * Handles HTTP GET requests to "/api/admin/employees/{accountUuid}"
         * In case of success, it returns:
         *   - profile dto of the account.
         *   - HTTP STATUS CODE 200 OK.
         * */
-        return AccountMapper
+        return new ResponseEntity<>(AccountMapper
                 .AccountEntityToAccountProfileDto(
                         accountService.getAccountByUuidAndRole(accountUuid, Role.EMPLOYEE)
-                );
+                ), HttpStatus.OK);
     }
 
     @GetMapping("/all")
@@ -67,8 +67,9 @@ public class EmployeeController {
     }
 
     @DeleteMapping("/{accountUuid}")
-    public void DeleteEmployeeByUuid(@PathVariable UUID accountUuid){
+    public ResponseEntity DeleteEmployeeByUuid(@PathVariable UUID accountUuid){
         accountService.deleteAccountByUuid(accountUuid);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }
