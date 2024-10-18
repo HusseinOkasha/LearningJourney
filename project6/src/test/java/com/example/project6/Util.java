@@ -19,7 +19,6 @@ public class Util {
     @Value("${authentication.url}")
     private  String authenticationUrl;
 
-
     public CreateTableRequest buildCreateTableRequest(){
        return CreateTableRequest
                 .builder()
@@ -93,7 +92,7 @@ public class Util {
                 )
                 .build();
     }
-    public List<Account> buildAccounts(){
+    public static List<Account> buildAccounts(){
         // build admin accounts
         Account admin1 = Account.builder()
                 .withName("Hussein")
