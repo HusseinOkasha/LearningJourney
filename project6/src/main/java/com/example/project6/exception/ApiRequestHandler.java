@@ -8,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -34,6 +35,14 @@ public class ApiRequestHandler {
     @ExceptionHandler(value = {AccessDeniedException.class})
     public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException e) {
         HttpStatus httpStatus = HttpStatus.FORBIDDEN;
+        ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
+                e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
+        );
+        return new ResponseEntity<>(apiExceptionDto, httpStatus);
+    }
+    @ExceptionHandler(value = {MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Object> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
                 e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
         );

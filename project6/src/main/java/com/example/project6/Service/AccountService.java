@@ -39,12 +39,14 @@ public class AccountService {
         if (dbAccount.getRole() != role){
             throw new NotFoundException(String.format("Couldn't find an %s with uuid: %s", role, uuid ));
         }
-        return accountRepository.load(dbAccount);
+        return dbAccount;
     }
 
     public Account getAccountByUuid(UUID uuid) {
         Account account  = Account.builder().withAccountUuid(uuid).build();
-        return accountRepository.load(account);
+        return accountRepository.load(account).orElseThrow(
+                ()-> new NotFoundException("Couldn't find account with uuid: "+ uuid )
+        );
     }
 
     public Account getAccountByEmail(String email){

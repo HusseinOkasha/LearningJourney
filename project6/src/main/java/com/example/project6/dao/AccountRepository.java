@@ -35,8 +35,8 @@ public class AccountRepository {
 
     }
 
-    public Account load(Account account) {
-        return accountTable.getItem(account);
+    public Optional<Account> load(Account account) {
+        return Optional.ofNullable(accountTable.getItem(account));
     }
 
     public List<Account> getAllByRole(Role role){
