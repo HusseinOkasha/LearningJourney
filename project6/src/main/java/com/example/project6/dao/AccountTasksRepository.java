@@ -62,6 +62,12 @@ public class AccountTasksRepository {
         return Optional.ofNullable(accountTaskLinkTable.getItem(accountTaskLink));
     }
 
+    public Optional<AccountTaskLink> load(AccountTaskLink accountTaskLink){
+
+        return Optional.ofNullable(accountTaskLinkTable.getItem(accountTaskLink));
+    }
+
+
     public Put generatePutAction(AccountTaskLink accountTaskLink){
         // Takes AccountTaskLink parameter and generates a Put action for it.
         return Put
