@@ -3,6 +3,7 @@ package com.example.project6.Service;
 import com.example.project6.dao.AccountTasksRepository;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
+import com.example.project6.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 
@@ -22,7 +23,12 @@ public class AccountTasksService {
     }
 
     public AccountTaskLink getByAccountUuidAndTaskUuid(UUID accountUuid, UUID taskUuid){
-        return accountTasksRepository.getByAccountUuidAndTaskUuid(accountUuid, taskUuid);
+        return accountTasksRepository.getByAccountUuidAndTaskUuid(accountUuid, taskUuid)
+                .orElseThrow(()->new NotFoundException(
+                        String.format("couldn't find task with uuid: %s that belongs to account with uuid: %s",
+                                taskUuid, accountUuid)
+                        )
+                );
     }
     public TransactWriteItem generatePutTransactWriteItem(AccountTaskLink accountTaskLink){
         return accountTasksRepository.generatePutTransactWriteItem(accountTaskLink);

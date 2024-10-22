@@ -3,16 +3,14 @@ package com.example.project6.dao;
 
 
 import com.example.project6.entity.AccountTaskLink;
+import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 public class TaskAccountsRepository {
@@ -28,7 +26,12 @@ public class TaskAccountsRepository {
     public void save(TaskAccountLink taskAccountLink){
         this.taskAccountLinkTable.putItem(taskAccountLink);
     }
-
+    public Optional<TaskAccountLink> load(TaskAccountLink taskAccountLink){
+        return Optional.ofNullable(this.taskAccountLinkTable.getItem(taskAccountLink));
+    }
+    public void delete(TaskAccountLink taskAccountLink){
+        this.taskAccountLinkTable.deleteItem(taskAccountLink);
+    }
     public List<TaskAccountLink> getTaskAccounts(UUID taskUuid) {
         TaskAccountLink accountTaskLink = TaskAccountLink
                 .builder()

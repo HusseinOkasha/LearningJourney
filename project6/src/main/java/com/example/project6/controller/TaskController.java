@@ -1,14 +1,18 @@
 package com.example.project6.controller;
 
 
+import com.example.project6.Enum.Role;
 import com.example.project6.Service.AccountTasksService;
+import com.example.project6.Service.AuthenticationService;
 import com.example.project6.Service.TaskService;
 import com.example.project6.dto.*;
+import com.example.project6.entity.Account;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.util.entityAndDtoMappers.TaskMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,12 +24,15 @@ public class TaskController {
 
     final private TaskService taskService;
     final private AccountTasksService accountTasksService;
+    final private AuthenticationService authenticationService;
 
-    public TaskController(TaskService taskService, AccountTasksService accountTasksService) {
+
+    public TaskController(TaskService taskService, AccountTasksService accountTasksService, AuthenticationService authenticationService) {
         this.taskService = taskService;
         this.accountTasksService = accountTasksService;
+        this.authenticationService = authenticationService;
     }
-
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping
     public void addTask(@RequestBody CreateTaskRequest request){
         Task task = TaskMapper.createTaskRequestToTaskEntity(request);
@@ -85,6 +92,7 @@ public class TaskController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{taskUuid}")
     public ResponseEntity deleteTaskUuid(@PathVariable UUID taskUuid){
         taskService.deleteTaskByUuid(taskUuid);

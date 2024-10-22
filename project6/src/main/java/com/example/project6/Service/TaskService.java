@@ -1,7 +1,10 @@
 package com.example.project6.Service;
 
 
+import com.example.project6.Enum.Role;
 import com.example.project6.Enum.TaskStatus;
+import com.example.project6.dao.AccountTasksRepository;
+import com.example.project6.dao.TaskAccountsRepository;
 import com.example.project6.dao.TaskRepository;
 import com.example.project6.dao.TransactionsRepository;
 import com.example.project6.entity.Account;
@@ -22,32 +25,25 @@ import java.util.stream.Stream;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final TaskAccountsService taskAccountsService;
+
     private final AccountService accountService;
     private final AuthenticationService authenticationService;
-    private final TaskAccountsService taskAccountsService;
     private final AccountTasksService accountTasksService;
     private final TransactionsRepository transactionsRepository;
-    private final DynamoDbTable<AccountTaskLink> accountTaskLinkTable;
-    private final DynamoDbTable<Task> taskTable;
-    private final DynamoDbTable<TaskAccountLink> taskAccountLinkTable;
 
     public TaskService(TaskRepository taskRepository,
                        AccountService accountService, AuthenticationService authenticationService,
                        TaskAccountsService taskAccountsService,
                        TransactionsRepository transactionsRepository,
-                       AccountTasksService accountTasksService, DynamoDbTable<AccountTaskLink> accountTaskLinkTable,
-                       DynamoDbTable<Task> taskTable, DynamoDbTable<TaskAccountLink> taskAccountLinkTable) {
+                       AccountTasksService accountTasksService) {
 
         this.taskRepository = taskRepository;
+        this.taskAccountsService = taskAccountsService;
         this.accountService = accountService;
         this.authenticationService = authenticationService;
-        this.taskAccountsService = taskAccountsService;
         this.accountTasksService = accountTasksService;
         this.transactionsRepository = transactionsRepository;
-
-        this.accountTaskLinkTable = accountTaskLinkTable;
-        this.taskTable = taskTable;
-        this.taskAccountLinkTable = taskAccountLinkTable;
     }
 
     public Task createNewTask(Task task) {
@@ -105,6 +101,8 @@ public class TaskService {
     }
 
     public Task getTaskByUuid(UUID taskUuid) {
+        // check if the currently authenticated account has the authority to get the task with the given taskUuid.
+        checkAuthorityToUpdateOrDeleteTask(taskUuid);
         Task task = Task.builder().withTaskUuid(taskUuid).build();
         return taskRepository
                 .load(task)
@@ -125,6 +123,9 @@ public class TaskService {
          *       to the database.
          *
          * */
+
+        // check if the currently authenticated account has the authority to update the task with the given taskUuid.
+        checkAuthorityToUpdateOrDeleteTask(taskUuid);
 
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
@@ -172,6 +173,9 @@ public class TaskService {
          *       and AccountTaskLinks to the database.
          * */
 
+        // check if the currently authenticated account has the authority to update the task with the given taskUuid.
+        checkAuthorityToUpdateOrDeleteTask(taskUuid);
+
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
 
@@ -211,6 +215,8 @@ public class TaskService {
          *   2) Sets the tasks description with the new description.
          *   3) Save the task after performing the update to the database.
          * */
+        // check if the currently authenticated account has the authority to update the task with the given taskUuid.
+        checkAuthorityToUpdateOrDeleteTask(taskUuid);
 
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
@@ -231,6 +237,9 @@ public class TaskService {
          *   2) Sets the task status with the new status.
          *   3) Save the task after performing the update to the database.
          * */
+
+        // check if the currently authenticated account has the authority to update the task with the given taskUuid.
+        checkAuthorityToUpdateOrDeleteTask(taskUuid);
 
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
@@ -305,8 +314,7 @@ public class TaskService {
         return taskAccountLinks;
     }
 
-    private List<AccountTaskLink> fetchAndUpdateAccountTaskLinks(List<TaskAccountLink> taskAccountLinks,
-                                                                 Task updatedTask) {
+    private List<AccountTaskLink> fetchAndUpdateAccountTaskLinks(List<TaskAccountLink> taskAccountLinks, Task updatedTask) {
         /*
          * Helper method, it
          *   1) Fetches all account task links based on task Account links, why ?
@@ -332,5 +340,23 @@ public class TaskService {
                         accountTaskLink.setTaskTitle(updatedTask.getTitle()) // update task title in account task link.
         );
         return accountTaskLinks;
+    }
+
+    private void checkAuthorityToUpdateOrDeleteTask(UUID taskUuid){
+        // it is a helper method that checks that the currently authenticated account has the authority to:
+        //  - read / update the task with the given taskUuid.
+
+        // extract the currently authenticated account.
+        Account currentlyAuthenticatedAccount = authenticationService.getAuthenticatedAccount();
+
+        // if the currently authenticated account is employee he should be assigned to the task to:
+        //   - Update / read it.
+        if(currentlyAuthenticatedAccount.getRole() == Role.EMPLOYEE){
+            // Will attempt to get an item with pk: ACCOUNT#ACCOUNT_UUID, SK: TASK#TASK_UUID.
+            // If it doesn't find such item, it will throw NOT_FOUND exception.
+            AccountTaskLink accountTaskLink = accountTasksService
+                    .getByAccountUuidAndTaskUuid(currentlyAuthenticatedAccount.getAccountUuid(), taskUuid);
+        }
+
     }
 }

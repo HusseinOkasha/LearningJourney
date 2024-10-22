@@ -11,10 +11,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 public class AccountTasksRepository {
@@ -55,14 +52,14 @@ public class AccountTasksRepository {
 
     }
 
-    public AccountTaskLink getByAccountUuidAndTaskUuid(UUID accountUuid, UUID taskUuid){
+    public Optional<AccountTaskLink> getByAccountUuidAndTaskUuid(UUID accountUuid, UUID taskUuid){
         AccountTaskLink accountTaskLink = AccountTaskLink
                 .builder()
                 .withAccountUuid(accountUuid)
                 .withTaskUuid(taskUuid)
                 .build();
 
-        return accountTaskLinkTable.getItem(accountTaskLink);
+        return Optional.ofNullable(accountTaskLinkTable.getItem(accountTaskLink));
     }
 
     public Put generatePutAction(AccountTaskLink accountTaskLink){
