@@ -94,7 +94,7 @@ public class TaskController {
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{taskUuid}")
-    public ResponseEntity deleteTaskUuid(@PathVariable UUID taskUuid){
+    public ResponseEntity deleteByTaskUuid(@PathVariable UUID taskUuid){
         taskService.deleteTaskByUuid(taskUuid);
         return new ResponseEntity<>(HttpStatus.OK);
     }
