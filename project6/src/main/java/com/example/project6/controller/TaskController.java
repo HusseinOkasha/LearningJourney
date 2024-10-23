@@ -30,10 +30,10 @@ public class TaskController {
     }
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping
-    public ResponseEntity createNewTask(@RequestBody CreateTaskRequest request){
+    public ResponseEntity<TaskDto> createNewTask(@RequestBody CreateTaskRequest request){
         Task task = TaskMapper.createTaskRequestToTaskEntity(request);
-        taskService.createNewTask(task);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        Task dbTask = taskService.createNewTask(task);
+        return new ResponseEntity<>(TaskMapper.TaskEntityToTaskDto(dbTask) ,HttpStatus.CREATED);
     }
 
     @GetMapping("/{taskUuid}")

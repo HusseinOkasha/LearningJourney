@@ -6,12 +6,14 @@ import com.example.project6.Service.AccountTasksService;
 import com.example.project6.Service.TaskAccountsService;
 import com.example.project6.Service.TaskService;
 import com.example.project6.Util;
+import com.example.project6.dto.TaskDto;
 import com.example.project6.entity.Account;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,8 +35,8 @@ import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -139,7 +141,7 @@ class TaskControllerTest {
         * checks that an account with role ADMIN can create new tasks.
         * It checks that:
         *   - The response status code is 201 CREATED.
-        *   - The task exists when I fetch all my tasks.
+        *   - The returned taskDto is the expected one.
         * */
 
         // get admin account.
@@ -149,19 +151,32 @@ class TaskControllerTest {
         String accessToken  = util.attemptAuthenticationWith(admin);
 
         // create the request body.
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("title", "start banking system project");
-        requestBody.put("description","is an e-financial solution");
-        requestBody.put("status", TaskStatus.DONE);
+        TaskDto expectedTaskDto =  new TaskDto("start banking system project",
+                "is an e-financial solution",
+                TaskStatus.DONE, null);
 
-        given()
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("title", expectedTaskDto.title());
+        requestBody.put("description",expectedTaskDto.description());
+        requestBody.put("status", expectedTaskDto.taskStatus());
+
+        Response response = given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
                 .body(requestBody)
                 .when()
-                .post(API_URL)
-                .then().statusCode(HttpStatus.CREATED.value()); // check that the status code is 201 CREATED.
+                .post(API_URL);
 
+        response.then().statusCode(HttpStatus.CREATED.value()); // check that the status code is 201 CREATED.
+
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
+
+        // check that the expectedTaskDto is the same as the expected one.
+        assertThat(taskDto)
+                .usingRecursiveComparison()
+                // exclude the taskUuid as it is generated just before saving the task to the database.
+                .ignoringFields("taskUuid")
+                .isEqualTo(expectedTaskDto);
     }
 
 }

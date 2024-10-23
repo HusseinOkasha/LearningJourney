@@ -10,6 +10,7 @@ import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
 import com.example.project6.exception.NotFoundException;
+import org.aspectj.weaver.ast.Not;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -43,7 +44,7 @@ public class TaskService {
         this.transactionsRepository = transactionsRepository;
     }
 
-    public void createNewTask(Task task) {
+    public Task createNewTask(Task task) {
         /*
          * creates new task, accountTaskLink, and taskAccountLink
          * All three are saved to the database atomically ( inside transaction).
@@ -74,6 +75,10 @@ public class TaskService {
 
         // perform the transaction on the database.
         transactionsRepository.transactionWrite(transactWriteItemsRequest);
+
+        return taskRepository.load(task).orElseThrow(
+                ()->new NotFoundException("couldn't find task with uuid: " + task.getTaskUuid())
+        );
     }
 
     public Task getTaskByUuid(UUID taskUuid) {
