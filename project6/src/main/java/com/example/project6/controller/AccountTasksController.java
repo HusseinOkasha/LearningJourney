@@ -1,6 +1,8 @@
 package com.example.project6.controller;
 
 import com.example.project6.Service.AccountTasksService;
+import com.example.project6.Service.AuthenticationService;
+import com.example.project6.entity.Account;
 import com.example.project6.entity.AccountTaskLink;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,5 +34,17 @@ public class AccountTasksController {
          * */
         List<AccountTaskLink>tasks = accountTasksService.getAccountTasks(accountUuid);
         return new ResponseEntity<>(tasks, HttpStatus.OK);
+    }
+    @GetMapping("/tasks")
+    public ResponseEntity<List<AccountTaskLink>> getMyTasks(){
+        /*
+        * Handles HTTP GET requests to "api/account/tasks"
+        * In case of success it returns:
+        *   - list of "AccountTaskLink". represents links between the currently authenticated account and his tasks.
+        *   - HTTP STATUS CODE 200 OK.
+        * */
+
+        List<AccountTaskLink>accountTaskLinks = accountTasksService.getMyTasks();
+        return new ResponseEntity<>(accountTaskLinks, HttpStatus.OK);
     }
 }
