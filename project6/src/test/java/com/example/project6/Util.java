@@ -1,7 +1,11 @@
 package com.example.project6;
 
 import com.example.project6.Enum.Role;
+import com.example.project6.Enum.TaskStatus;
 import com.example.project6.entity.Account;
+import com.example.project6.entity.AccountTaskLink;
+import com.example.project6.entity.Task;
+import com.example.project6.entity.TaskAccountLink;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.springframework.beans.factory.annotation.Value;
@@ -122,7 +126,39 @@ public class Util {
                 .build();
         return List.of(admin1, admin2, employee1, employee2);
     }
+    public static List<Task> buildSampleTasks(){
+        // helper function creates a list of 2 sample tasks
+        Task task1 = Task.builder()
+                .withTitle("fixBugs")
+                .withDescription("fixing bugs in bugy controller.")
+                .withStatus(TaskStatus.TODO)
+                .build();
 
+        Task task2 = Task.builder()
+                .withTitle("add some tests")
+                .withDescription("add tests for X controller.")
+                .withStatus(TaskStatus.IN_PROGRESS)
+                .build();
+        return List.of(task1, task2);
+    }
+    public static AccountTaskLink buildAccountTaskLinkWith(Account account, Task task){
+        return AccountTaskLink.builder()
+                .withAccountUuid(account.getAccountUuid())
+                .withAccountName(account.getName())
+                .withTaskUuid(task.getTaskUuid())
+                .withTaskTitle(task.getTitle())
+                .build();
+
+    }
+    public static TaskAccountLink buildTaskAccountLinkWith(Account account, Task task){
+        return TaskAccountLink.builder()
+                .withAccountUuid(account.getAccountUuid())
+                .withAccountName(account.getName())
+                .withTaskUuid(task.getTaskUuid())
+                .withTaskTitle(task.getTitle())
+                .build();
+
+    }
     public String attemptAuthenticationWith(Account account) {
         /*
          * helper method attempt authentication with the passed account.

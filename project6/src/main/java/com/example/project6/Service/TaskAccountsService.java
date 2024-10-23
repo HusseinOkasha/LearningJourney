@@ -30,6 +30,9 @@ public class TaskAccountsService {
         return taskAccountsRepository.getTaskAccounts(taskUuid);
     }
 
+    public void save(TaskAccountLink taskAccountLink){
+        taskAccountsRepository.save(taskAccountLink);
+    }
     public void shareTaskWithAccount(UUID taskUuid, UUID accountUuid){
         // fetch the task from the database.
         Task dbTask = taskRepository.load(Task.builder().withTaskUuid(taskUuid).build()).orElseThrow(

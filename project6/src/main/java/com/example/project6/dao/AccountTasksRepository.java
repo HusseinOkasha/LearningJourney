@@ -5,6 +5,7 @@ package com.example.project6.dao;
 
 
 import com.example.project6.entity.AccountTaskLink;
+import com.example.project6.entity.Task;
 import org.springframework.stereotype.Repository;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -26,7 +27,6 @@ public class AccountTasksRepository {
     public void save(AccountTaskLink accountTaskLink){
         accountTaskLinkTable.putItem(accountTaskLink);
     }
-
     public List<AccountTaskLink> getAccountTasks(UUID accountUuid){
         AccountTaskLink accountTaskLink  =  AccountTaskLink
                 .builder()

@@ -1,13 +1,10 @@
 package com.example.project6.controller;
 
 
-import com.example.project6.Enum.Role;
 import com.example.project6.Service.AccountTasksService;
 import com.example.project6.Service.AuthenticationService;
 import com.example.project6.Service.TaskService;
 import com.example.project6.dto.*;
-import com.example.project6.entity.Account;
-import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.util.entityAndDtoMappers.TaskMapper;
 import org.springframework.http.HttpStatus;
@@ -15,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -34,9 +30,10 @@ public class TaskController {
     }
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping
-    public void addTask(@RequestBody CreateTaskRequest request){
+    public ResponseEntity createNewTask(@RequestBody CreateTaskRequest request){
         Task task = TaskMapper.createTaskRequestToTaskEntity(request);
-        taskService.addTaskToAccount(task);
+        taskService.createNewTask(task);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @GetMapping("/{taskUuid}")

@@ -3,8 +3,6 @@ package com.example.project6.Service;
 
 import com.example.project6.Enum.Role;
 import com.example.project6.Enum.TaskStatus;
-import com.example.project6.dao.AccountTasksRepository;
-import com.example.project6.dao.TaskAccountsRepository;
 import com.example.project6.dao.TaskRepository;
 import com.example.project6.dao.TransactionsRepository;
 import com.example.project6.entity.Account;
@@ -13,7 +11,6 @@ import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
 import com.example.project6.exception.NotFoundException;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 
@@ -46,54 +43,33 @@ public class TaskService {
         this.transactionsRepository = transactionsRepository;
     }
 
-    public Task createNewTask(Task task) {
-        if (task.getTaskUuid() == null) {
-            task.setTaskUuid(UUID.randomUUID());
-        }
-        return taskRepository.save(task);
-    }
+    public void createNewTask(Task task) {
+        /*
+         * creates new task, accountTaskLink, and taskAccountLink
+         * All three are saved to the database atomically ( inside transaction).
+         * */
 
-    public void addTaskToAccount(Task task) {
         // get the currently authenticated account.
-        Account account = authenticationService.getAuthenticatedAccount();
+        Account currentlyAuthenticatedAccount = authenticationService.getAuthenticatedAccount();
 
         // create task uuid if it isn't created.
-        if (task.getTaskUuid() == null) {
-            task.setTaskUuid(UUID.randomUUID());
-        }
+        generateUuid(task);
 
-        // get the task uuid.
-        UUID taskUuid = task.getTaskUuid();
+        // build accountTaskLink.
+        AccountTaskLink accountTaskLink = buildAccountTaskLinkWith(currentlyAuthenticatedAccount, task);
 
-        // create Account_Task_Link
-        AccountTaskLink accountTaskLink = AccountTaskLink.builder()
-                .withAccountUuid(account.getAccountUuid())
-                .withTaskUuid(taskUuid)
-                .withAccountName(account.getName())
-                .withTaskTitle(task.getTitle())
-                .build();
+        // build taskAccountLink
+        TaskAccountLink taskAccountLink = buildTaskAccountLinkWith(currentlyAuthenticatedAccount, task);
 
-        // create Task_Account_Link
-        TaskAccountLink taskAccountLink = TaskAccountLink.builder()
-                .withAccountUuid(account.getAccountUuid())
-                .withAccountName(account.getName())
-                .withTaskUuid(taskUuid)
-                .withTaskTitle(task.getTitle())
-                .build();
-
-        // generate transact write item for the new task.
-        TransactWriteItem taskTransactWriteItem = generatePutTransactWriteItem(task);
-        List<TransactWriteItem> transactWriteItems = Stream
-                .of(
-                        accountTasksService.generatePutTransactWriteItem(accountTaskLink),// generate transact write item for the account task link
-                        taskAccountsService.generatePutTransactWriteItem(taskAccountLink),// generate transact write item for the task account link
-                        taskTransactWriteItem
-                )
-                .toList();
+        // build TransactWriteItems for (task, accountTaskLink, and taskAccountLink)
+        // with PUT action.
+        List<TransactWriteItem> transactWriteItems = buildPutTransactWriteItemsWith(
+                Stream.of(accountTaskLink), Stream.of(taskAccountLink), task
+        );
 
         // create write transaction request.
         TransactWriteItemsRequest transactWriteItemsRequest = TransactWriteItemsRequest.builder().transactItems(
-               transactWriteItems
+                transactWriteItems
         ).build();
 
         // perform the transaction on the database.
@@ -229,7 +205,6 @@ public class TaskService {
 
     }
 
-
     public void updateTaskStatusByUuid(TaskStatus status, UUID taskUuid) {
         /*
          * Updates the task status using task uuid.
@@ -262,7 +237,7 @@ public class TaskService {
         List<TaskAccountLink> taskAccountLinks = taskAccountsService.getTaskAccounts(taskUuid);
 
         // fetch all account task links from the database.
-        List<AccountTaskLink>accountTaskLinks = taskAccountLinks.stream().map(taskAccountLink ->
+        List<AccountTaskLink> accountTaskLinks = taskAccountLinks.stream().map(taskAccountLink ->
                 AccountTaskLink.builder()
                         .withTaskUuid(taskAccountLink.getTaskUuid())
                         .withAccountUuid(taskAccountLink.getAccountUuid())
@@ -271,7 +246,7 @@ public class TaskService {
 
         // create transact write items for ( task account links & account task links).
         List<TransactWriteItem> transactWriteItems = Stream.concat(
-                taskAccountLinks.stream().map(taskAccountsService::generateDeleteTransactWriteItem),
+                        taskAccountLinks.stream().map(taskAccountsService::generateDeleteTransactWriteItem),
                         accountTaskLinks.stream().map(accountTasksService::generateDeleteTransactWriteItem)
                 )
                 .collect(Collectors.toList());
@@ -288,11 +263,14 @@ public class TaskService {
         transactionsRepository.transactionWrite(transactWriteItemsRequest);
 
     }
-
-    public TransactWriteItem generatePutTransactWriteItem(Task task){
+    public void save(Task task){
+        taskRepository.save(task);
+    }
+    public TransactWriteItem generatePutTransactWriteItem(Task task) {
         return taskRepository.generatePutTransactWriteItem(task);
     }
-    public TransactWriteItem generateDeleteTransactWriteItem(Task task){
+
+    public TransactWriteItem generateDeleteTransactWriteItem(Task task) {
         return taskRepository.generateDeleteTransactWriteItem(task);
     }
 
@@ -314,7 +292,8 @@ public class TaskService {
         return taskAccountLinks;
     }
 
-    private List<AccountTaskLink> fetchAndUpdateAccountTaskLinks(List<TaskAccountLink> taskAccountLinks, Task updatedTask) {
+    private List<AccountTaskLink> fetchAndUpdateAccountTaskLinks(List<TaskAccountLink> taskAccountLinks,
+                                                                 Task updatedTask) {
         /*
          * Helper method, it
          *   1) Fetches all account task links based on task Account links, why ?
@@ -342,7 +321,7 @@ public class TaskService {
         return accountTaskLinks;
     }
 
-    private void checkAuthorityToUpdateOrDeleteTask(UUID taskUuid){
+    private void checkAuthorityToUpdateOrDeleteTask(UUID taskUuid) {
         // it is a helper method that checks that the currently authenticated account has the authority to:
         //  - read / update the task with the given taskUuid.
 
@@ -351,7 +330,7 @@ public class TaskService {
 
         // if the currently authenticated account is employee he should be assigned to the task to:
         //   - Update / read it.
-        if(currentlyAuthenticatedAccount.getRole() == Role.EMPLOYEE){
+        if (currentlyAuthenticatedAccount.getRole() == Role.EMPLOYEE) {
             // Will attempt to get an item with pk: ACCOUNT#ACCOUNT_UUID, SK: TASK#TASK_UUID.
             // If it doesn't find such item, it will throw NOT_FOUND exception.
             AccountTaskLink accountTaskLink = accountTasksService
@@ -359,4 +338,104 @@ public class TaskService {
         }
 
     }
+
+    private void generateUuid(Task task) {
+        /*
+         * generates uuid for the task if it is not created yet
+         * */
+        if (task.getTaskUuid() == null) {
+            task.setTaskUuid(UUID.randomUUID());
+        }
+
+    }
+
+    private List<TransactWriteItem> buildPutTransactWriteItemsWith(
+            Stream<AccountTaskLink> accountTaskLinks,
+            Stream<TaskAccountLink> taskAccountLinks,
+            Task task) {
+        /*
+         * It's a helper method builds transactWrites with Put action from the provided:
+         *   - accountTaskLinks.
+         *   - taskAccountLinks.
+         *   - task.
+         * */
+
+        List<TransactWriteItem> transactWriteItems;
+
+        transactWriteItems = Stream.concat(
+                // generate put transact write items for accountTaskLinks
+                accountTaskLinks.map(accountTasksService::generatePutTransactWriteItem),
+
+                // generate put transact write items for taskAccountLinks.
+                taskAccountLinks.map(taskAccountsService::generatePutTransactWriteItem)
+        ).collect(Collectors.toList());
+
+        // generate put transact write item for task.
+        transactWriteItems.add(generatePutTransactWriteItem(task));
+
+        // returns the transact write items list, which contains transact write items for
+        // accountTaskLinks, taskAccountLinks, and task. With PUT action.
+        return transactWriteItems;
+    }
+
+    private List<TransactWriteItem> buildDeleteTransactWriteItemsWith(
+            Stream<AccountTaskLink> accountTaskLinks,
+            Stream<TaskAccountLink> taskAccountLinks,
+            Task task) {
+        /*
+         * It's a helper method builds transactWrites with DELETE action from the provided:
+         *   - accountTaskLinks.
+         *   - taskAccountLinks.
+         *   - task.
+         * */
+
+        // in case the action is delete.
+        List<TransactWriteItem> transactWriteItems = Stream.concat(
+                // generate delete transact write items for accountTaskLinks.
+                accountTaskLinks.map(accountTasksService::generateDeleteTransactWriteItem),
+                // generate delete transact write items for taskAccountLinks.
+                taskAccountLinks.map(taskAccountsService::generateDeleteTransactWriteItem)
+        ).collect(Collectors.toList());
+
+        // generate write transact item for the task.
+        transactWriteItems.add(generateDeleteTransactWriteItem(task));
+
+        // returns the transact write items list, which contains transact write items for
+        // accountTaskLinks, taskAccountLinks, and task. With DELETE action.
+        return transactWriteItems;
+    }
+
+    private TaskAccountLink buildTaskAccountLinkWith(Account account, Task task) {
+        /*
+         * It's a helper method that builds taskAccountLink entity.
+         * Arguments:
+         *   - Account: is the account that will be linked to the task.
+         *   - Task: is the task which the account will be linked to.
+         * It returns TaskAccountLink based on the provided account and task.
+         * */
+        return TaskAccountLink.builder()
+                .withAccountUuid(account.getAccountUuid())
+                .withAccountName(account.getName())
+                .withTaskUuid(task.getTaskUuid())
+                .withTaskTitle(task.getTitle())
+                .build();
+    }
+
+    private AccountTaskLink buildAccountTaskLinkWith(Account account, Task task) {
+        /*
+         * It's a helper method that builds accountTaskLink entity.
+         * Arguments:
+         *   - Account: is the account that will be linked to the task.
+         *   - Task: is the task which the account will be linked to.
+         * It returns an accountTaskLink based on the provided account and task.
+         * */
+
+        return AccountTaskLink.builder()
+                .withAccountUuid(account.getAccountUuid())
+                .withAccountName(account.getName())
+                .withTaskUuid(task.getTaskUuid())
+                .withTaskTitle(task.getTitle())
+                .build();
+    }
+
 }
