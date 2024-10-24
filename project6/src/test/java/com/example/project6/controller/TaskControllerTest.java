@@ -14,10 +14,14 @@ import com.example.project6.entity.TaskAccountLink;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import org.apache.commons.compress.archivers.EntryStreamOffsets;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,13 +30,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ser.std.MapProperty;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 
@@ -177,6 +184,114 @@ class TaskControllerTest {
                 // exclude the taskUuid as it is generated just before saving the task to the database.
                 .ignoringFields("taskUuid")
                 .isEqualTo(expectedTaskDto);
+    }
+    @ParameterizedTest
+    @MethodSource("provideTasksForTestingInValidTaskCreation")
+    void shouldNotCreateTaskWithInValidData(Map<String,Object>requestBody, Map<String, String> expectedErrors){
+        /*
+        * It checks that we can't create task with invalid data.
+        * In valid data:
+        *   - empty / null description.
+        *   - empty / null title.
+        * */
+        Account admin = sampleAccounts.get(0);
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .post(API_URL);
+
+        Map errors = response.getBody().as(Map.class);
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        assertThat(errors).isEqualTo(expectedErrors);
+    }
+
+    static Stream<Arguments> provideTasksForTestingInValidTaskCreation(){
+        /*
+        * Creates invalid tasks:
+        *   - with empty / null description
+        *   - with empty / null title
+        *   - with empty / null status.
+        * returns stream of arguments each argument contains:
+        *   - Task to be created.
+        *   - expected status code.
+        *   - expected error message.
+        * */
+
+        String inValidDescriptionErrorMessage = "description shouldn't be empty nor blank";
+        String inValidTitleErrorMessage = "title shouldn't be empty nor blank";
+        String inValidStatusErrorMessage = "Invalid value provided for TaskStatus. Expected values are: TODO, IN_PROGRESS, DONE.";
+
+        return Stream.of(
+                // with empty description.
+                Arguments.of(
+                        Map.of(
+                                "description","",
+                                "title", "new task title",
+                                "status", TaskStatus.TODO
+                        ),Map.of("description", inValidDescriptionErrorMessage)
+                ),
+
+                // with null description
+                Arguments.of(
+                        Map.of(
+                                "title", "new task title",
+                                "status", TaskStatus.TODO
+                        ),
+                        Map.of("description", inValidDescriptionErrorMessage)),
+
+                // with empty title.
+                Arguments.of(
+                        Map.of(
+                                "description","new task description",
+                                "title", "",
+                                "status", TaskStatus.TODO
+                        ),
+                        Map.of("title", inValidTitleErrorMessage)
+
+                ),
+                // with null title.
+                Arguments.of(
+                        Map.of(
+                                "description","new task description",
+                                "status", TaskStatus.TODO
+                        ),
+                        Map.of("title", inValidTitleErrorMessage)
+                ),
+                // with empty status.
+                Arguments.of(
+                        Map.of(
+                                "description","new task description",
+                                "title", "new task title",
+                                "status", ""
+                        ),
+                        Map.of("status", inValidStatusErrorMessage)
+                ),
+                // without status.
+                Arguments.of(
+                        Map.of(
+                                "description","new task description",
+                                "title", "new task title"
+                        ),
+                        Map.of("status", "must not be null")
+                ),
+                // with invalid status.
+                Arguments.of(
+                        Map.of(
+                                "description","new task description",
+                                "title", "new task title",
+                                "status", "randomString"
+                        ),
+                        Map.of("status", inValidStatusErrorMessage)
+                )
+
+        );
+
+
+
     }
 
 }

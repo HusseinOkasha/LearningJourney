@@ -7,6 +7,7 @@ import com.example.project6.Service.TaskService;
 import com.example.project6.dto.*;
 import com.example.project6.entity.Task;
 import com.example.project6.util.entityAndDtoMappers.TaskMapper;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,7 +31,7 @@ public class TaskController {
     }
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping
-    public ResponseEntity<TaskDto> createNewTask(@RequestBody CreateTaskRequest request){
+    public ResponseEntity<TaskDto> createNewTask(@RequestBody @Valid CreateTaskRequest request){
         Task task = TaskMapper.createTaskRequestToTaskEntity(request);
         Task dbTask = taskService.createNewTask(task);
         return new ResponseEntity<>(TaskMapper.TaskEntityToTaskDto(dbTask) ,HttpStatus.CREATED);

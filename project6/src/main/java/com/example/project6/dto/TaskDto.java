@@ -9,8 +9,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 
-public record TaskDto (@NotNull @NotBlank String title,
-                       @NotNull @NotBlank String description,
+public record TaskDto (@NotNull @NotBlank(message = "title shouldn't be empty nor blank") String title,
+                       @NotNull @NotBlank(message = "description shouldn't be empty nor blank") String description,
                        @Valid TaskStatus taskStatus,
-                       @NotNull UUID taskUuid){
+                       @NotNull  UUID taskUuid){
 }
