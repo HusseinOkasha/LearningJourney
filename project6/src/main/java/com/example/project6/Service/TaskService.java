@@ -268,8 +268,10 @@ public class TaskService {
         transactionsRepository.transactionWrite(transactWriteItemsRequest);
 
     }
-    public void save(Task task){
+    public Task save(Task task){
+        generateUuid(task);
         taskRepository.save(task);
+        return task;
     }
     public TransactWriteItem generatePutTransactWriteItem(Task task) {
         return taskRepository.generatePutTransactWriteItem(task);

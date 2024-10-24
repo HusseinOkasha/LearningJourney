@@ -11,6 +11,7 @@ import com.example.project6.entity.Account;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
+import com.example.project6.util.entityAndDtoMappers.TaskMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -35,10 +36,7 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
@@ -209,6 +207,75 @@ class TaskControllerTest {
         assertThat(errors).isEqualTo(expectedErrors);
     }
 
+    @Test
+    void shouldGetTaskByUuidAsAdmin(){
+        /*
+        * tests that account of role ADMIN can get task by uuid.
+        * It checks that:
+        *   - response status code is: 200 OK.
+        *   - the returned task dto is the expected one.
+        * */
+
+        // get admin account.
+        Account admin = sampleAccounts.get(0);
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // get sample task.
+        Task task =  sampleTasks.get(0);
+
+        // create task dto from the sample task.
+        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(String.format("%s/%s", API_URL, task.getTaskUuid()));
+
+        // extract the returned taskDto
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
+
+        // check that the response status code is 200 OK.
+        response.then().statusCode(HttpStatus.OK.value());
+
+        // check that the returned taskDto is the expected one.
+        assertThat(taskDto).isEqualTo(expectedTaskDto);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideUuidsTestingGettingTaskWithInvalidUuid")
+    void shouldNotGetTaskWithInvalidUUID(String taskUuid, HttpStatus expectedStatusCode){
+        /*
+         * InValid uuid means:
+         *   - no task with this uuid.
+         *   - malformed uuid.
+         * */
+
+        // get sample admin account.
+        Account admin = sampleAccounts.get(0);
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(String.format("%s/%s", API_URL, taskUuid))
+                .then()
+                .statusCode(expectedStatusCode.value());
+
+
+
+    }
+    static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid(){
+        /*
+        * InValid uuid means:
+        *   - no task with this uuid.
+        *   - malformed uuid.
+        * */
+
+        return Stream.of(Arguments.of(UUID.randomUUID().toString(), HttpStatus.NOT_FOUND),
+                Arguments.of( "randomString", HttpStatus.BAD_REQUEST));
+    }
     static Stream<Arguments> provideTasksForTestingInValidTaskCreation(){
         /*
         * Creates invalid tasks:
