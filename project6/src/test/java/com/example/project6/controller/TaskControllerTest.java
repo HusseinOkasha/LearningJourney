@@ -217,7 +217,6 @@ class TaskControllerTest {
         *   - with empty / null status.
         * returns stream of arguments each argument contains:
         *   - Task to be created.
-        *   - expected status code.
         *   - expected error message.
         * */
 
