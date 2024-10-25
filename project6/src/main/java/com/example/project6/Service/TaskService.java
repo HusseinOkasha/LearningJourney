@@ -10,11 +10,13 @@ import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
 import com.example.project6.exception.NotFoundException;
+import com.example.project6.security.CustomUserDetails;
 import org.aspectj.weaver.ast.Not;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 
+import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,7 +85,7 @@ public class TaskService {
 
     public Task getTaskByUuid(UUID taskUuid) {
         // check if the currently authenticated account has the authority to get the task with the given taskUuid.
-        checkAuthorityToUpdateOrDeleteTask(taskUuid);
+
         Task task = Task.builder().withTaskUuid(taskUuid).build();
         return taskRepository
                 .load(task)
@@ -92,7 +94,7 @@ public class TaskService {
                 );
     }
 
-    public void updateTaskByTaskUuid(Task task, UUID taskUuid) {
+    public Task updateTaskByTaskUuid(Task task, UUID taskUuid) {
         /*
          * It tries to update all task attributes.
          *   1) Fetches the task to be updated from the database, set its attributes to the updated values.
@@ -106,7 +108,7 @@ public class TaskService {
          * */
 
         // check if the currently authenticated account has the authority to update the task with the given taskUuid.
-        checkAuthorityToUpdateOrDeleteTask(taskUuid);
+
 
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
@@ -140,9 +142,12 @@ public class TaskService {
 
         // fire the transaction to the database
         transactionsRepository.transactionWrite(transactWriteItemsRequest);
+
+        // fetch the task after update from the database.
+        return getTaskByUuid(taskUuid);
     }
 
-    public void updateTaskTitleByUuid(String title, UUID taskUuid) {
+    public Task updateTaskTitleByUuid(String title, UUID taskUuid) {
         /*
          * It tries to update task title by uuid.
          *   1) Fetches the task to be updated from the database, set the title to the updated title,
@@ -155,7 +160,7 @@ public class TaskService {
          * */
 
         // check if the currently authenticated account has the authority to update the task with the given taskUuid.
-        checkAuthorityToUpdateOrDeleteTask(taskUuid);
+
 
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
@@ -187,9 +192,12 @@ public class TaskService {
 
         // fire the transaction to the database
         transactionsRepository.transactionWrite(transactWriteItemsRequest);
+
+        // fetch the task after update from the database.
+        return getTaskByUuid(taskUuid);
     }
 
-    public void updateTaskDescriptionByUuid(String description, UUID taskUuid) {
+    public Task updateTaskDescriptionByUuid(String description, UUID taskUuid) {
         /*
          * Update the task description using the task uuid.
          *   1) Fetches the task we want to update.
@@ -197,7 +205,7 @@ public class TaskService {
          *   3) Save the task after performing the update to the database.
          * */
         // check if the currently authenticated account has the authority to update the task with the given taskUuid.
-        checkAuthorityToUpdateOrDeleteTask(taskUuid);
+
 
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
@@ -208,9 +216,12 @@ public class TaskService {
         // save the task to the database.
         this.taskRepository.save(dbTask);
 
+        // fetch the task after update from the database.
+        return getTaskByUuid(taskUuid);
+
     }
 
-    public void updateTaskStatusByUuid(TaskStatus status, UUID taskUuid) {
+    public Task updateTaskStatusByUuid(TaskStatus status, UUID taskUuid) {
         /*
          * Updates the task status using task uuid.
          *   1) Fetches the task we want to update.
@@ -219,7 +230,7 @@ public class TaskService {
          * */
 
         // check if the currently authenticated account has the authority to update the task with the given taskUuid.
-        checkAuthorityToUpdateOrDeleteTask(taskUuid);
+
 
         // fetch the task from the database.
         Task dbTask = this.getTaskByUuid(taskUuid);
@@ -229,6 +240,9 @@ public class TaskService {
 
         // save the task to the database.
         this.taskRepository.save(dbTask);
+
+        // fetch the task after update from the database.
+        return getTaskByUuid(taskUuid);
     }
 
     public void deleteTaskByUuid(UUID taskUuid) {
@@ -328,22 +342,11 @@ public class TaskService {
         return accountTaskLinks;
     }
 
-    private void checkAuthorityToUpdateOrDeleteTask(UUID taskUuid) {
-        // it is a helper method that checks that the currently authenticated account has the authority to:
-        //  - read / update the task with the given taskUuid.
+    public boolean isTaskSharedWithUser(UUID taskUuid, CustomUserDetails customUserDetails) {
 
-        // extract the currently authenticated account.
-        Account currentlyAuthenticatedAccount = authenticationService.getAuthenticatedAccount();
-
-        // if the currently authenticated account is employee he should be assigned to the task to:
-        //   - Update / read it.
-        if (currentlyAuthenticatedAccount.getRole() == Role.EMPLOYEE) {
-            // Will attempt to get an item with pk: ACCOUNT#ACCOUNT_UUID, SK: TASK#TASK_UUID.
-            // If it doesn't find such item, it will throw NOT_FOUND exception.
-            AccountTaskLink accountTaskLink = accountTasksService
-                    .getByAccountUuidAndTaskUuid(currentlyAuthenticatedAccount.getAccountUuid(), taskUuid);
-        }
-
+        UUID accountUuid = customUserDetails.getAccountUuid();
+        AccountTaskLink accountTaskLink = accountTasksService.getByAccountUuidAndTaskUuid(accountUuid, taskUuid);
+        return true;
     }
 
     private void generateUuid(Task task) {

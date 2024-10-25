@@ -38,6 +38,8 @@ public class TaskController {
     }
 
     @GetMapping("/{taskUuid}")
+    @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE') and" +
+            " @taskService.isTaskSharedWithUser(#taskUuid, T(com.example.project6.security.CustomUserDetails).cast(principal)))")
     public ResponseEntity<TaskDto> getTaskByUuid(@PathVariable UUID taskUuid){
 
         Task task = taskService.getTaskByUuid(taskUuid);
@@ -49,23 +51,29 @@ public class TaskController {
     }
 
     @PutMapping("/{taskUuid}")
-    public ResponseEntity updateTaskByUuid(@RequestBody UpdateTaskRequest request, @PathVariable UUID taskUuid){
+    @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE') and" +
+            " @taskService.isTaskSharedWithUser(#taskUuid, T(com.example.project6.security.CustomUserDetails).cast(principal)))")
+    public ResponseEntity<TaskDto> updateTaskByUuid(@RequestBody UpdateTaskRequest request, @PathVariable UUID taskUuid){
         /*
         * Handles HTTP PUT requests to "/api/task/{taskUuid}".
         * It updates the all task attributes.
         * It returns HTTP STATUS CODE 200 OK in case of success.
         * */
-        taskService.updateTaskByTaskUuid(TaskMapper.updateTaskRequestToTaskEntity(request), taskUuid);
-        return new ResponseEntity(HttpStatus.OK);
+        Task dbTask = taskService.updateTaskByTaskUuid(TaskMapper.updateTaskRequestToTaskEntity(request), taskUuid);
+        return new ResponseEntity(TaskMapper.TaskEntityToTaskDto(dbTask) ,HttpStatus.OK);
     }
 
     @PatchMapping("/{taskUuid}/title")
+    @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE')" +
+            " and @taskService.isTaskSharedWithUser(#taskUuid, principal))")
     public ResponseEntity updateTaskTitleByUuid(@RequestBody UpdateTaskTitleRequest request, @PathVariable UUID taskUuid){
-        taskService.updateTaskTitleByUuid(request.title(), taskUuid);
-        return new ResponseEntity<>(HttpStatus.OK);
+        Task dbTask = taskService.updateTaskTitleByUuid(request.title(), taskUuid);
+        return new ResponseEntity<>(TaskMapper.TaskEntityToTaskDto(dbTask), HttpStatus.OK);
     }
 
     @PatchMapping("/{taskUuid}/description")
+    @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE') and" +
+            " @taskService.isTaskSharedWithUser(#taskUuid, T(com.example.project6.security.CustomUserDetails).cast(principal)))")
     public ResponseEntity updateTaskDescriptionByUuid(@RequestBody UpdateTaskDescriptionRequest request,
                                                 @PathVariable UUID taskUuid){
         /*
@@ -73,11 +81,13 @@ public class TaskController {
         * Updates the task description.
         * Returns HTTP RESPONSE STATUS CODE 200 OK.
         * */
-        taskService.updateTaskDescriptionByUuid(request.description(), taskUuid);
-        return new ResponseEntity(HttpStatus.OK);
+        Task dbTask = taskService.updateTaskDescriptionByUuid(request.description(), taskUuid);
+        return new ResponseEntity(TaskMapper.TaskEntityToTaskDto(dbTask), HttpStatus.OK);
     }
 
     @PatchMapping("/{taskUuid}/status")
+    @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE') and" +
+            " @taskService.isTaskSharedWithUser(#taskUuid, T(com.example.project6.security.CustomUserDetails).cast(principal)))")
     public ResponseEntity updateTaskStatusByUuid(@RequestBody UpdateTaskStatusRequest request,
                                                  @PathVariable UUID taskUuid){
         /*
@@ -86,8 +96,8 @@ public class TaskController {
         * Returns HTTP response STATUS CODE 200 OK.
         * */
 
-        taskService.updateTaskStatusByUuid(request.status(), taskUuid);
-        return new ResponseEntity<>(HttpStatus.OK);
+        Task dbTask = taskService.updateTaskStatusByUuid(request.status(), taskUuid);
+        return new ResponseEntity<>(TaskMapper.TaskEntityToTaskDto(dbTask), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
