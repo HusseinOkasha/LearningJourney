@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.List;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -186,5 +187,31 @@ public class Util {
         assertThat(accessToken).isNotEmpty();
         return accessToken;
     }
+    public static Task updateTask(Task task){
+        /*
+        * Helper method that takes a task updates its description, title, and status.
+        * Then returns the task after performing updates on it.
+        * */
 
+        task.setTitle("updated Title");
+        task.setDescription("updated task description.");
+        for(TaskStatus status: TaskStatus.values()){
+            if (task.getStatus()!= status){
+                task.setStatus(status);
+            }
+        }
+        return task;
+    }
+    public static Map<String, Object> buildUpdateTaskRequestBody(Task task){
+        /*
+        * Arguments:
+        *   - task from which we will take data to create update Task request body.
+        * Return value:
+        *   - A map contains, key: the fields , value: their values .
+        * */
+        return Map.of(
+                "title",task.getTitle(),
+                "description", task.getDescription(),
+                "status", task.getStatus());
+    }
 }

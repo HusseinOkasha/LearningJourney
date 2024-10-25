@@ -1,10 +1,7 @@
 package com.example.project6.controller;
 
 import com.example.project6.Enum.TaskStatus;
-import com.example.project6.Service.AccountService;
-import com.example.project6.Service.AccountTasksService;
-import com.example.project6.Service.TaskAccountsService;
-import com.example.project6.Service.TaskService;
+import com.example.project6.Service.*;
 import com.example.project6.Util;
 import com.example.project6.dto.TaskDto;
 import com.example.project6.entity.Account;
@@ -184,7 +181,7 @@ class TaskControllerTest {
                 .isEqualTo(expectedTaskDto);
     }
     @ParameterizedTest
-    @MethodSource("provideTasksForTestingInValidTaskCreation")
+    @MethodSource("provideInvalidTasksAndErrorMessages")
     void shouldNotCreateTaskWithInValidData(Map<String,Object>requestBody, Map<String, String> expectedErrors){
         /*
         * It checks that we can't create task with invalid data.
@@ -266,17 +263,94 @@ class TaskControllerTest {
 
 
     }
-    static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid(){
+
+    @Test
+    void shouldUpdateTaskByUuidAsAdmin(){
         /*
-        * InValid uuid means:
-        *   - no task with this uuid.
-        *   - malformed uuid.
+        * checks the following:
+        *   - account with role admin can update task by its uuid:
+        *   - checks that the response status code is 200 OK.
+        *   - checks that the returned taskDto is updated.
         * */
 
+        // get sample account.
+        Account admin = sampleAccounts.get(0);
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // get sample task
+        Task task = sampleTasks.get(0);
+
+        // perform updates on the task
+        task =  Util.updateTask(task);
+
+        // create taskDto from the task after the update.
+        TaskDto expectedTaskDto =  TaskMapper.TaskEntityToTaskDto(task);
+
+        // build request body from the updated task.
+        Map<String, Object> requestBody = Util.buildUpdateTaskRequestBody(task);
+
+        // send the request.
+        Response response  = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .put(String.format("%s/%s", API_URL, task.getTaskUuid()));
+
+        // check that the response status code is as expected.
+        response.then()
+                .statusCode(HttpStatus.OK.value());
+
+        // extract the updated taskDto returned with the request.
+        TaskDto taskDto =  response.getBody().as(TaskDto.class);
+
+        // check that the returned taskDto is equal to the expected one.
+        assertThat(taskDto).isEqualTo(expectedTaskDto);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidTasksAndErrorMessages")
+    void shouldNotUpdateTaskByUuidWithInValidData(Map<String, Object>requestBody, Map<String, String> expectedErrors){
+        /*
+        * checks that you can't update task with inValid data.
+        * Invalid data means:
+        *   - Invalid taskDto.
+        *       - empty / null description.
+        *       - empty / null title.
+        *       - empty / null / malformed status.
+        *   - Invalid uuid.
+        *       - uuid that doesn't correspond to any task.
+        *       - random string that isn't uuid.
+        * */
+
+        // get sample account with role
+        Account admin = sampleAccounts.get(0);
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // send the request.
+        Response response  = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .put(String.format("%s/%s", API_URL, task.getTaskUuid()));
+
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        Map<String, String> errors = response.getBody().as(Map.class);
+
+        assertThat(errors).isEqualTo(expectedErrors);
+    }
+
+    static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid(){
         return Stream.of(Arguments.of(UUID.randomUUID().toString(), HttpStatus.NOT_FOUND),
                 Arguments.of( "randomString", HttpStatus.BAD_REQUEST));
     }
-    static Stream<Arguments> provideTasksForTestingInValidTaskCreation(){
+
+    static Stream<Arguments> provideInvalidTasksAndErrorMessages(){
         /*
         * Creates invalid tasks:
         *   - with empty / null description

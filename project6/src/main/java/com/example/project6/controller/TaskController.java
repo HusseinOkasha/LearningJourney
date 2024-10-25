@@ -53,7 +53,7 @@ public class TaskController {
     @PutMapping("/{taskUuid}")
     @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE') and" +
             " @taskService.isTaskSharedWithUser(#taskUuid, T(com.example.project6.security.CustomUserDetails).cast(principal)))")
-    public ResponseEntity<TaskDto> updateTaskByUuid(@RequestBody UpdateTaskRequest request, @PathVariable UUID taskUuid){
+    public ResponseEntity<TaskDto> updateTaskByUuid(@RequestBody @Valid UpdateTaskRequest request, @PathVariable UUID taskUuid){
         /*
         * Handles HTTP PUT requests to "/api/task/{taskUuid}".
         * It updates the all task attributes.
