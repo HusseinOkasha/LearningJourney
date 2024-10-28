@@ -283,8 +283,6 @@ class TaskControllerTest {
                 .get(String.format("%s/%s", API_URL, taskUuid))
                 .then()
                 .statusCode(expectedStatusCode.value());
-
-
     }
 
     @Test
@@ -448,6 +446,87 @@ class TaskControllerTest {
 
     }
 
+    @Test
+    void shouldUpdateTaskDescriptionByUuidAsAdmin(){
+        /*
+         * checks that:
+         *   - account with role admin can update the tasks title.
+         *   - with response status code 200 OK.
+         *   - And the returned taskDto(in the response body) is the same as the expected taskDto.
+         * */
+
+        // get admin account.
+        Account admin = sampleAccounts.get(0);
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        //update the task title.
+        task.setDescription("description updated");
+
+        // create taskDto to be the ground truth.
+        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
+
+        // build the request body.
+        Map<String, String> requestBody = Map.of("description", task.getDescription());
+
+        // send the request.
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .patch(String.format("%s/%s/description", API_URL, task.getTaskUuid()));
+
+        // check that the response status code is as expected.
+        response.then()
+                .statusCode(HttpStatus.OK.value());
+
+        // extract the updated taskDto returned with the request.
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
+
+        // check that the returned taskDto is equal to the expected one.
+        assertThat(taskDto).isEqualTo(expectedTaskDto);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidTaskDescription")
+    void shouldNotUpdateTaskDescriptionWithInvalidData(Map<String, String> requestBody,
+                                                       Map<String, String> expectedErrors){
+        /*
+         * test that an account of role ADMIN can't update the task description with invalid data.
+         * Invalid data means:
+         *   - empty / null description.
+         * Checks that:
+         *   - response status code is 400 BAD_REQUEST.
+         * */
+
+
+        // get sample account
+        Account admin = sampleAccounts.get(0);
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+
+        // send the request.
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .patch(String.format("%s/%s/description", API_URL, task.getTaskUuid()));
+
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value()); // check that the response status code is 400 BAD_REQUEST.
+
+        Map<String, String> errors = response.getBody().as(Map.class);
+
+        assertThat(errors).isEqualTo(expectedErrors); // check that the error messages are returned as expected.
+
+    }
+
     static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid() {
         return Stream.of(Arguments.of(UUID.randomUUID().toString(), HttpStatus.NOT_FOUND),
                 Arguments.of("randomString", HttpStatus.BAD_REQUEST));
@@ -540,6 +619,22 @@ class TaskControllerTest {
 
         // create argument with request body doesn't contain the title.
         arguments.add(Arguments.of(Map.of(), inValidTitleErrorMessage));
+
+        return arguments.stream();
+    }
+
+    static Stream<Arguments> provideInvalidTaskDescription(){
+        // get invalid titles
+        List<String> inValidTitles = Util.getInvalidTaskDescriptions();
+
+        // create arguments from them.
+        List<Arguments> arguments = inValidTitles.stream().map(description ->
+                Arguments.of(Map.of("description",description),
+                        inValidDescriptionErrorMessage)
+        ).collect(Collectors.toList());
+
+        // create argument with request body doesn't contain the title.
+        arguments.add(Arguments.of(Map.of(), inValidDescriptionErrorMessage));
 
         return arguments.stream();
     }
