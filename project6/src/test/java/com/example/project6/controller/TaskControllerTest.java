@@ -66,8 +66,8 @@ class TaskControllerTest {
     private List<Task> sampleTasks;
 
     // expected error messages in case of invalid data.
-    private final static Map<String,  String> inValidDescriptionErrorMessage = Map.of(
-            "description","description shouldn't be empty nor blank");
+    private final static Map<String, String> inValidDescriptionErrorMessage = Map.of(
+            "description", "description shouldn't be empty nor blank");
     private final static Map<String, String> inValidTitleErrorMessage = Map.of(
             "title", "title shouldn't be empty nor blank");
     private final static Map<String, String> inValidStatusErrorMessage = Map.of(
@@ -414,6 +414,40 @@ class TaskControllerTest {
 
     }
 
+    @ParameterizedTest
+    @MethodSource("provideInvalidTaskTitle")
+    void shouldNotUpdateTaskTitleWithInValidData(Map<String, String> requestBody, Map<String, String> expectedErrors){
+        /*
+        * test that an account of role ADMIN can't update the task title with invalid data.
+        * Invalid data means:
+        *   - empty / title.
+        * Checks that:
+        *   - response status code is 400 BAD_REQUEST.
+        * */
+
+        // get sample account
+        Account admin = sampleAccounts.get(0);
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+
+        // send the request.
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .patch(String.format("%s/%s/title", API_URL, task.getTaskUuid()));
+
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value()); // check that the response status code is 400 BAD_REQUEST.
+
+        Map<String, String> errors = response.getBody().as(Map.class);
+
+        assertThat(errors).isEqualTo(expectedErrors); // check that the error messages are returned as expected.
+
+    }
+
     static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid() {
         return Stream.of(Arguments.of(UUID.randomUUID().toString(), HttpStatus.NOT_FOUND),
                 Arguments.of("randomString", HttpStatus.BAD_REQUEST));
@@ -430,9 +464,9 @@ class TaskControllerTest {
          *   - expected error message.
          * */
 
-        List<String>invalidDescriptions = Util.getInvalidTaskDescriptions();
-        List<String>invalidTitles = Util.getInvalidTaskTitles();
-        List<String>invalidStatus = Util.getInvalidTaskStatus();
+        List<String> invalidDescriptions = Util.getInvalidTaskDescriptions();
+        List<String> invalidTitles = Util.getInvalidTaskTitles();
+        List<String> invalidStatus = Util.getInvalidTaskStatus();
 
         Map<String, String> validRequestBody = Map.of(
                 "description", "new description",
@@ -445,25 +479,25 @@ class TaskControllerTest {
 
         // create arguments with invalid description.
         arguments = invalidDescriptions.stream().map(
-                description->{
-                  Map<String, String> inValidRequestBody = Util // update the description with the invalid value.
-                          .updateRequestBody(validRequestBody, Map.of("description", description), List.of());
-                  return Arguments.of(inValidRequestBody, inValidDescriptionErrorMessage);
+                description -> {
+                    Map<String, String> inValidRequestBody = Util // update the description with the invalid value.
+                            .updateRequestBody(validRequestBody, Map.of("description", description), List.of());
+                    return Arguments.of(inValidRequestBody, inValidDescriptionErrorMessage);
                 }
         ).collect(Collectors.toList());
 
         // create arguments with invalid title.
         arguments.addAll(invalidTitles.stream().map(
-                title->{
+                title -> {
                     Map<String, String> inValidRequestBody = Util // update title with the invalid value.
                             .updateRequestBody(validRequestBody, Map.of("title", title), List.of());
-                    return Arguments.of(inValidRequestBody, inValidTitleErrorMessage );
+                    return Arguments.of(inValidRequestBody, inValidTitleErrorMessage);
                 }
         ).toList());
 
         // create arguments with invalid status.
         arguments.addAll(invalidStatus.stream().map(
-                status->{
+                status -> {
                     Map<String, String> inValidRequestBody = Util // update status with invalid value.
                             .updateRequestBody(validRequestBody, Map.of("status", status), List.of());
                     return Arguments.of(inValidRequestBody, inValidStatusErrorMessage);
@@ -474,7 +508,7 @@ class TaskControllerTest {
         arguments.add(Util
                 .generateArgumentsFrom(Util // delete description from the request body.
                                 .updateRequestBody(validRequestBody, Map.of(), List.of("description"))
-                        ,  inValidDescriptionErrorMessage)
+                        , inValidDescriptionErrorMessage)
         );
 
         // create argument with null title.
@@ -494,6 +528,19 @@ class TaskControllerTest {
         return arguments.stream();
     }
 
+    static Stream<Arguments> provideInvalidTaskTitle(){
+        // get invalid titles
+        List<String> inValidTitles = Util.getInvalidTaskTitles();
 
+        // create arguments from them.
+        List<Arguments> arguments = inValidTitles.stream().map(title ->
+                Arguments.of(Map.of("title",title),
+                        inValidTitleErrorMessage)
+        ).collect(Collectors.toList());
 
+        // create argument with request body doesn't contain the title.
+        arguments.add(Arguments.of(Map.of(), inValidTitleErrorMessage));
+
+        return arguments.stream();
+    }
 }

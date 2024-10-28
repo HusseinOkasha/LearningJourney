@@ -66,7 +66,7 @@ public class TaskController {
     @PatchMapping("/{taskUuid}/title")
     @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE')" +
             " and @taskService.isTaskSharedWithUser(#taskUuid, principal))")
-    public ResponseEntity updateTaskTitleByUuid(@RequestBody UpdateTaskTitleRequest request, @PathVariable UUID taskUuid){
+    public ResponseEntity updateTaskTitleByUuid(@RequestBody @Valid  UpdateTaskTitleRequest request, @PathVariable UUID taskUuid){
         Task dbTask = taskService.updateTaskTitleByUuid(request.title(), taskUuid);
         return new ResponseEntity<>(TaskMapper.TaskEntityToTaskDto(dbTask), HttpStatus.OK);
     }
@@ -74,7 +74,7 @@ public class TaskController {
     @PatchMapping("/{taskUuid}/description")
     @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE') and" +
             " @taskService.isTaskSharedWithUser(#taskUuid, T(com.example.project6.security.CustomUserDetails).cast(principal)))")
-    public ResponseEntity updateTaskDescriptionByUuid(@RequestBody UpdateTaskDescriptionRequest request,
+    public ResponseEntity updateTaskDescriptionByUuid(@RequestBody @Valid UpdateTaskDescriptionRequest request,
                                                 @PathVariable UUID taskUuid){
         /*
         * Handles HTTP PATCH requests to "/api/task/{taskUuid}"
@@ -88,7 +88,7 @@ public class TaskController {
     @PatchMapping("/{taskUuid}/status")
     @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE') and" +
             " @taskService.isTaskSharedWithUser(#taskUuid, T(com.example.project6.security.CustomUserDetails).cast(principal)))")
-    public ResponseEntity updateTaskStatusByUuid(@RequestBody UpdateTaskStatusRequest request,
+    public ResponseEntity updateTaskStatusByUuid(@RequestBody @Valid  UpdateTaskStatusRequest request,
                                                  @PathVariable UUID taskUuid){
         /*
         * Handles HTTP PATCH requests to "/api/task/{taskUuid}/status"
