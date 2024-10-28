@@ -34,6 +34,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
@@ -47,23 +48,44 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 class TaskControllerTest {
+
+    // hold the port on which the app will be listening.
     @LocalServerPort
     private Integer port;
 
+    // dependencies
     private final DynamoDbClient dynamoDbClient;
     private final AccountService accountService;
     private final TaskService taskService;
     private final AccountTasksService accountTasksService;
     private final TaskAccountsService taskAccountsService;
     private final Util util;
+
+    // holds sample data we will use in our tests.
     private List<Account> sampleAccounts;
     private List<Task> sampleTasks;
-    private static LocalStackContainer localStack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:3.2"))
-            .withServices(LocalStackContainer.Service.DYNAMODB);
+
+    // expected error messages in case of invalid data.
+    private final static Map<String,  String> inValidDescriptionErrorMessage = Map.of(
+            "description","description shouldn't be empty nor blank");
+    private final static Map<String, String> inValidTitleErrorMessage = Map.of(
+            "title", "title shouldn't be empty nor blank");
+    private final static Map<String, String> inValidStatusErrorMessage = Map.of(
+            "status", "Invalid value provided for TaskStatus. Expected values are: TODO, IN_PROGRESS, DONE."
+    );
+
+    // endpoint for task controller.
     static final String API_URL = "/api/task";
 
+    // container in which holds dynamoDB.
+    private static LocalStackContainer localStack = new LocalStackContainer(DockerImageName.parse("localstack" +
+            "/localstack:3.2"))
+            .withServices(LocalStackContainer.Service.DYNAMODB);
+
+    // constructor.
     @Autowired
-    TaskControllerTest(DynamoDbClient dynamoDbClient, AccountService accountService, TaskService taskService, AccountTasksService accountTasksService, TaskAccountsService taskAccountsService, Util util) {
+    TaskControllerTest(DynamoDbClient dynamoDbClient, AccountService accountService, TaskService taskService,
+                       AccountTasksService accountTasksService, TaskAccountsService taskAccountsService, Util util) {
         this.dynamoDbClient = dynamoDbClient;
         this.accountService = accountService;
         this.taskService = taskService;
@@ -73,7 +95,7 @@ class TaskControllerTest {
     }
 
     @BeforeAll
-    static void beforeAll(){
+    static void beforeAll() {
         localStack.start();
         System.setProperty("amazon.dynamodb.endpoint",
                 localStack.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString());
@@ -97,12 +119,12 @@ class TaskControllerTest {
         sampleTasks.forEach(taskService::save);
 
         /*
-        * Build the following links:
-        *   - link admin1 --> task1
-        *   - link employee1 --> task1
-        *   - link task1  --> admin1
-        *   - link task1 --> employee1
-        * */
+         * Build the following links:
+         *   - link admin1 --> task1
+         *   - link employee1 --> task1
+         *   - link task1  --> admin1
+         *   - link task1 --> employee1
+         * */
         AccountTaskLink admin1TaskLink = Util.buildAccountTaskLinkWith(sampleAccounts.get(0), sampleTasks.get(0));
         TaskAccountLink taskAdmin1Link = Util.buildTaskAccountLinkWith(sampleAccounts.get(0), sampleTasks.get(0));
         AccountTaskLink employee1TaskLink = Util.buildAccountTaskLinkWith(sampleAccounts.get(2), sampleTasks.get(0));
@@ -132,34 +154,35 @@ class TaskControllerTest {
 
 
     }
+
     @AfterEach
-    void afterEach(){
+    void afterEach() {
         dynamoDbClient.deleteTable(DeleteTableRequest.builder().tableName("app").build());
     }
 
     @Test
-    void shouldCreateNewTaskAsAdmin(){
+    void shouldCreateNewTaskAsAdmin() {
         /*
-        * checks that an account with role ADMIN can create new tasks.
-        * It checks that:
-        *   - The response status code is 201 CREATED.
-        *   - The returned taskDto is the expected one.
-        * */
+         * checks that an account with role ADMIN can create new tasks.
+         * It checks that:
+         *   - The response status code is 201 CREATED.
+         *   - The returned taskDto is the expected one.
+         * */
 
         // get admin account.
         Account admin = sampleAccounts.get(0);
 
         // authenticate with the fetched admin account.
-        String accessToken  = util.attemptAuthenticationWith(admin);
+        String accessToken = util.attemptAuthenticationWith(admin);
 
         // create the request body.
-        TaskDto expectedTaskDto =  new TaskDto("start banking system project",
+        TaskDto expectedTaskDto = new TaskDto("start banking system project",
                 "is an e-financial solution",
                 TaskStatus.DONE, null);
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("title", expectedTaskDto.title());
-        requestBody.put("description",expectedTaskDto.description());
+        requestBody.put("description", expectedTaskDto.description());
         requestBody.put("status", expectedTaskDto.taskStatus());
 
         Response response = given()
@@ -180,15 +203,16 @@ class TaskControllerTest {
                 .ignoringFields("taskUuid")
                 .isEqualTo(expectedTaskDto);
     }
+
     @ParameterizedTest
     @MethodSource("provideInvalidTasksAndErrorMessages")
-    void shouldNotCreateTaskWithInValidData(Map<String,Object>requestBody, Map<String, String> expectedErrors){
+    void shouldNotCreateTaskWithInValidData(Map<String, Object> requestBody, Map<String, String> expectedErrors) {
         /*
-        * It checks that we can't create task with invalid data.
-        * In valid data:
-        *   - empty / null description.
-        *   - empty / null title.
-        * */
+         * It checks that we can't create task with invalid data.
+         * In valid data:
+         *   - empty / null description.
+         *   - empty / null title.
+         * */
         Account admin = sampleAccounts.get(0);
         String accessToken = util.attemptAuthenticationWith(admin);
 
@@ -205,20 +229,20 @@ class TaskControllerTest {
     }
 
     @Test
-    void shouldGetTaskByUuidAsAdmin(){
+    void shouldGetTaskByUuidAsAdmin() {
         /*
-        * tests that account of role ADMIN can get task by uuid.
-        * It checks that:
-        *   - response status code is: 200 OK.
-        *   - the returned task dto is the expected one.
-        * */
+         * tests that account of role ADMIN can get task by uuid.
+         * It checks that:
+         *   - response status code is: 200 OK.
+         *   - the returned task dto is the expected one.
+         * */
 
         // get admin account.
         Account admin = sampleAccounts.get(0);
         String accessToken = util.attemptAuthenticationWith(admin);
 
         // get sample task.
-        Task task =  sampleTasks.get(0);
+        Task task = sampleTasks.get(0);
 
         // create task dto from the sample task.
         TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
@@ -241,7 +265,7 @@ class TaskControllerTest {
 
     @ParameterizedTest
     @MethodSource("provideUuidsTestingGettingTaskWithInvalidUuid")
-    void shouldNotGetTaskWithInvalidUUID(String taskUuid, HttpStatus expectedStatusCode){
+    void shouldNotGetTaskWithInvalidUUID(String taskUuid, HttpStatus expectedStatusCode) {
         /*
          * InValid uuid means:
          *   - no task with this uuid.
@@ -261,17 +285,16 @@ class TaskControllerTest {
                 .statusCode(expectedStatusCode.value());
 
 
-
     }
 
     @Test
-    void shouldUpdateTaskByUuidAsAdmin(){
+    void shouldUpdateTaskByUuidAsAdmin() {
         /*
-        * checks the following:
-        *   - account with role admin can update task by its uuid:
-        *   - checks that the response status code is 200 OK.
-        *   - checks that the returned taskDto is updated.
-        * */
+         * checks the following:
+         *   - account with role admin can update task by its uuid:
+         *   - checks that the response status code is 200 OK.
+         *   - checks that the returned taskDto is updated.
+         * */
 
         // get sample account.
         Account admin = sampleAccounts.get(0);
@@ -281,16 +304,16 @@ class TaskControllerTest {
         Task task = sampleTasks.get(0);
 
         // perform updates on the task
-        task =  Util.updateTask(task);
+        task = Util.updateTask(task);
 
         // create taskDto from the task after the update.
-        TaskDto expectedTaskDto =  TaskMapper.TaskEntityToTaskDto(task);
+        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
 
         // build request body from the updated task.
         Map<String, Object> requestBody = Util.buildUpdateTaskRequestBody(task);
 
         // send the request.
-        Response response  = given()
+        Response response = given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
                 .when()
@@ -302,7 +325,7 @@ class TaskControllerTest {
                 .statusCode(HttpStatus.OK.value());
 
         // extract the updated taskDto returned with the request.
-        TaskDto taskDto =  response.getBody().as(TaskDto.class);
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
 
         // check that the returned taskDto is equal to the expected one.
         assertThat(taskDto).isEqualTo(expectedTaskDto);
@@ -310,18 +333,18 @@ class TaskControllerTest {
 
     @ParameterizedTest
     @MethodSource("provideInvalidTasksAndErrorMessages")
-    void shouldNotUpdateTaskByUuidWithInValidData(Map<String, Object>requestBody, Map<String, String> expectedErrors){
+    void shouldNotUpdateTaskByUuidWithInValidData(Map<String, Object> requestBody, Map<String, String> expectedErrors) {
         /*
-        * checks that you can't update task with inValid data.
-        * Invalid data means:
-        *   - Invalid taskDto.
-        *       - empty / null description.
-        *       - empty / null title.
-        *       - empty / null / malformed status.
-        *   - Invalid uuid.
-        *       - uuid that doesn't correspond to any task.
-        *       - random string that isn't uuid.
-        * */
+         * checks that you can't update task with inValid data.
+         * Invalid data means:
+         *   - Invalid taskDto.
+         *       - empty / null description.
+         *       - empty / null title.
+         *       - empty / null / malformed status.
+         *   - Invalid uuid.
+         *       - uuid that doesn't correspond to any task.
+         *       - random string that isn't uuid.
+         * */
 
         // get sample account with role
         Account admin = sampleAccounts.get(0);
@@ -331,7 +354,7 @@ class TaskControllerTest {
         String accessToken = util.attemptAuthenticationWith(admin);
 
         // send the request.
-        Response response  = given()
+        Response response = given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
                 .when()
@@ -345,93 +368,132 @@ class TaskControllerTest {
         assertThat(errors).isEqualTo(expectedErrors);
     }
 
-    static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid(){
-        return Stream.of(Arguments.of(UUID.randomUUID().toString(), HttpStatus.NOT_FOUND),
-                Arguments.of( "randomString", HttpStatus.BAD_REQUEST));
+    @Test
+    void shouldUpdateTaskTitleByUuidAsAdmin() {
+        /*
+         * checks that:
+         *   - account with role admin can update the tasks title.
+         *   - with response status code 200 OK.
+         *   - And the returned taskDto(in the response body) is the same as the expected taskDto.
+         * */
+
+        // get admin account.
+        Account admin = sampleAccounts.get(0);
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        //update the task title.
+        task.setTitle("updateTile");
+
+        // create taskDto to be the ground truth.
+        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
+
+        // build the request body.
+        Map<String, String> requestBody = Map.of("title", "updateTile");
+
+        // send the request.
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .patch(String.format("%s/%s/title", API_URL, task.getTaskUuid()));
+
+        // check that the response status code is as expected.
+        response.then()
+                .statusCode(HttpStatus.OK.value());
+
+        // extract the updated taskDto returned with the request.
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
+
+        // check that the returned taskDto is equal to the expected one.
+        assertThat(taskDto).isEqualTo(expectedTaskDto);
+
     }
 
-    static Stream<Arguments> provideInvalidTasksAndErrorMessages(){
+    static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid() {
+        return Stream.of(Arguments.of(UUID.randomUUID().toString(), HttpStatus.NOT_FOUND),
+                Arguments.of("randomString", HttpStatus.BAD_REQUEST));
+    }
+
+    static Stream<Arguments> provideInvalidTasksAndErrorMessages() {
         /*
-        * Creates invalid tasks:
-        *   - with empty / null description
-        *   - with empty / null title
-        *   - with empty / null status.
-        * returns stream of arguments each argument contains:
-        *   - Task to be created.
-        *   - expected error message.
-        * */
+         * Creates invalid tasks:
+         *   - with empty / null description
+         *   - with empty / null title
+         *   - with empty / null status.
+         * returns stream of arguments each argument contains:
+         *   - Task to be created.
+         *   - expected error message.
+         * */
 
-        String inValidDescriptionErrorMessage = "description shouldn't be empty nor blank";
-        String inValidTitleErrorMessage = "title shouldn't be empty nor blank";
-        String inValidStatusErrorMessage = "Invalid value provided for TaskStatus. Expected values are: TODO, IN_PROGRESS, DONE.";
+        List<String>invalidDescriptions = Util.getInvalidTaskDescriptions();
+        List<String>invalidTitles = Util.getInvalidTaskTitles();
+        List<String>invalidStatus = Util.getInvalidTaskStatus();
 
-        return Stream.of(
-                // with empty description.
-                Arguments.of(
-                        Map.of(
-                                "description","",
-                                "title", "new task title",
-                                "status", TaskStatus.TODO
-                        ),Map.of("description", inValidDescriptionErrorMessage)
-                ),
-
-                // with null description
-                Arguments.of(
-                        Map.of(
-                                "title", "new task title",
-                                "status", TaskStatus.TODO
-                        ),
-                        Map.of("description", inValidDescriptionErrorMessage)),
-
-                // with empty title.
-                Arguments.of(
-                        Map.of(
-                                "description","new task description",
-                                "title", "",
-                                "status", TaskStatus.TODO
-                        ),
-                        Map.of("title", inValidTitleErrorMessage)
-
-                ),
-                // with null title.
-                Arguments.of(
-                        Map.of(
-                                "description","new task description",
-                                "status", TaskStatus.TODO
-                        ),
-                        Map.of("title", inValidTitleErrorMessage)
-                ),
-                // with empty status.
-                Arguments.of(
-                        Map.of(
-                                "description","new task description",
-                                "title", "new task title",
-                                "status", ""
-                        ),
-                        Map.of("status", inValidStatusErrorMessage)
-                ),
-                // without status.
-                Arguments.of(
-                        Map.of(
-                                "description","new task description",
-                                "title", "new task title"
-                        ),
-                        Map.of("status", "must not be null")
-                ),
-                // with invalid status.
-                Arguments.of(
-                        Map.of(
-                                "description","new task description",
-                                "title", "new task title",
-                                "status", "randomString"
-                        ),
-                        Map.of("status", inValidStatusErrorMessage)
-                )
-
+        Map<String, String> validRequestBody = Map.of(
+                "description", "new description",
+                "title", "new task title",
+                "status", TaskStatus.TODO.toString()
         );
 
+        // initialize list of arguments.
+        List<Arguments> arguments;
 
+        // create arguments with invalid description.
+        arguments = invalidDescriptions.stream().map(
+                description->{
+                  Map<String, String> inValidRequestBody = Util // update the description with the invalid value.
+                          .updateRequestBody(validRequestBody, Map.of("description", description), List.of());
+                  return Arguments.of(inValidRequestBody, inValidDescriptionErrorMessage);
+                }
+        ).collect(Collectors.toList());
 
+        // create arguments with invalid title.
+        arguments.addAll(invalidTitles.stream().map(
+                title->{
+                    Map<String, String> inValidRequestBody = Util // update title with the invalid value.
+                            .updateRequestBody(validRequestBody, Map.of("title", title), List.of());
+                    return Arguments.of(inValidRequestBody, inValidTitleErrorMessage );
+                }
+        ).toList());
+
+        // create arguments with invalid status.
+        arguments.addAll(invalidStatus.stream().map(
+                status->{
+                    Map<String, String> inValidRequestBody = Util // update status with invalid value.
+                            .updateRequestBody(validRequestBody, Map.of("status", status), List.of());
+                    return Arguments.of(inValidRequestBody, inValidStatusErrorMessage);
+                }
+        ).toList());
+
+        // create argument with null description.
+        arguments.add(Util
+                .generateArgumentsFrom(Util // delete description from the request body.
+                                .updateRequestBody(validRequestBody, Map.of(), List.of("description"))
+                        ,  inValidDescriptionErrorMessage)
+        );
+
+        // create argument with null title.
+        arguments.add(Util
+                .generateArgumentsFrom(Util // delete title from the request body.
+                                .updateRequestBody(validRequestBody, Map.of(), List.of("title"))
+                        , inValidTitleErrorMessage)
+        );
+
+        // create argument with null status.
+        arguments.add(Util
+                .generateArgumentsFrom(Util // delete status from the request body.
+                                .updateRequestBody(validRequestBody, Map.of(), List.of("status"))
+                        , Map.of("status", "must not be null"))
+        );
+
+        return arguments.stream();
     }
+
+
 
 }

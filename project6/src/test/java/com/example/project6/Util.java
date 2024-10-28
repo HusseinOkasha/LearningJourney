@@ -8,10 +8,12 @@ import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import org.junit.jupiter.params.provider.Arguments;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,10 +24,10 @@ import static org.hamcrest.Matchers.notNullValue;
 @Component
 public class Util {
     @Value("${authentication.url}")
-    private  String authenticationUrl;
+    private String authenticationUrl;
 
-    public CreateTableRequest buildCreateTableRequest(){
-       return CreateTableRequest
+    public CreateTableRequest buildCreateTableRequest() {
+        return CreateTableRequest
                 .builder()
                 .tableName("app")
                 .keySchema(
@@ -97,7 +99,8 @@ public class Util {
                 )
                 .build();
     }
-    public static List<Account> buildAccounts(){
+
+    public static List<Account> buildAccounts() {
         // build admin accounts
         Account admin1 = Account.builder()
                 .withName("Hussein")
@@ -127,7 +130,8 @@ public class Util {
                 .build();
         return List.of(admin1, admin2, employee1, employee2);
     }
-    public static List<Task> buildSampleTasks(){
+
+    public static List<Task> buildSampleTasks() {
         // helper function creates a list of 2 sample tasks
         Task task1 = Task.builder()
                 .withTitle("fixBugs")
@@ -142,7 +146,8 @@ public class Util {
                 .build();
         return List.of(task1, task2);
     }
-    public static AccountTaskLink buildAccountTaskLinkWith(Account account, Task task){
+
+    public static AccountTaskLink buildAccountTaskLinkWith(Account account, Task task) {
         return AccountTaskLink.builder()
                 .withAccountUuid(account.getAccountUuid())
                 .withAccountName(account.getName())
@@ -151,7 +156,8 @@ public class Util {
                 .build();
 
     }
-    public static TaskAccountLink buildTaskAccountLinkWith(Account account, Task task){
+
+    public static TaskAccountLink buildTaskAccountLinkWith(Account account, Task task) {
         return TaskAccountLink.builder()
                 .withAccountUuid(account.getAccountUuid())
                 .withAccountName(account.getName())
@@ -160,6 +166,7 @@ public class Util {
                 .build();
 
     }
+
     public String attemptAuthenticationWith(Account account) {
         /*
          * helper method attempt authentication with the passed account.
@@ -187,31 +194,62 @@ public class Util {
         assertThat(accessToken).isNotEmpty();
         return accessToken;
     }
-    public static Task updateTask(Task task){
+
+    public static Task updateTask(Task task) {
         /*
-        * Helper method that takes a task updates its description, title, and status.
-        * Then returns the task after performing updates on it.
-        * */
+         * Helper method that takes a task updates its description, title, and status.
+         * Then returns the task after performing updates on it.
+         * */
 
         task.setTitle("updated Title");
         task.setDescription("updated task description.");
-        for(TaskStatus status: TaskStatus.values()){
-            if (task.getStatus()!= status){
+        for (TaskStatus status : TaskStatus.values()) {
+            if (task.getStatus() != status) {
                 task.setStatus(status);
             }
         }
         return task;
     }
-    public static Map<String, Object> buildUpdateTaskRequestBody(Task task){
+
+    public static Map<String, Object> buildUpdateTaskRequestBody(Task task) {
         /*
-        * Arguments:
-        *   - task from which we will take data to create update Task request body.
-        * Return value:
-        *   - A map contains, key: the fields , value: their values .
-        * */
+         * Arguments:
+         *   - task from which we will take data to create update Task request body.
+         * Return value:
+         *   - A map contains, key: the fields , value: their values .
+         * */
         return Map.of(
-                "title",task.getTitle(),
+                "title", task.getTitle(),
                 "description", task.getDescription(),
                 "status", task.getStatus());
     }
+
+    public static List<String> getInvalidTaskDescriptions() {
+        // helper method.
+        // returns a list of all possible invalid descriptions
+        return List.of("");
+    }
+
+    public static List<String> getInvalidTaskTitles() {
+        // helper method.
+        // returns a list of all possible invalid titles.
+        return List.of("");
+    }
+
+    public static List<String> getInvalidTaskStatus() {
+        // helper method.
+        // returns a list of all possible invalid task status.
+        return List.of("", "randomString");
+    }
+    public static Map<String, String> updateRequestBody(Map<String, String> requestBody,
+                                                        Map<String, String> updates, List<String> toBeDeletedKeys){
+        Map<String, String> updatedRequestBody = new HashMap<>(requestBody);
+        updatedRequestBody.putAll(updates);
+        toBeDeletedKeys.forEach(updatedRequestBody::remove);
+        return updatedRequestBody;
+    }
+    public static Arguments generateArgumentsFrom(Map<String, String> requestBody, Map<String, String > errors){
+        return Arguments.of(requestBody, errors);
+    }
+
 }
