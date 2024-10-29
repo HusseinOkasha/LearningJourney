@@ -12,7 +12,6 @@ import com.example.project6.util.entityAndDtoMappers.TaskMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import org.apache.commons.compress.archivers.EntryStreamOffsets;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +27,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ser.std.MapProperty;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
@@ -229,7 +227,7 @@ class TaskControllerTest {
     }
 
     @Test
-    void shouldGetTaskByUuidAsAdmin() {
+    void shouldGetTaskByUuid() {
         /*
          * tests that account of role ADMIN can get task by uuid.
          * It checks that:
@@ -239,28 +237,35 @@ class TaskControllerTest {
 
         // get admin account.
         Account admin = sampleAccounts.get(0);
-        String accessToken = util.attemptAuthenticationWith(admin);
 
-        // get sample task.
+        // get employee.
+        Account employee = sampleAccounts.get(2);
+
+        shouldGetTaskByUuidAs(admin);
+        shouldGetTaskByUuidAs(employee);
+    }
+
+    @Test
+    void shouldNotGetTaskByUuid() {
+        /*
+         * tests that employee with whom the task isn't shared can't get it by uuid.
+         * It checks that:
+         *   - response status code is: 404 NOT_FOUND.
+         *   - the returned task dto is the expected one.
+         * */
+
+        // get employee with whom the task isn't shared.
+        Account employee = sampleAccounts.get(3);
+        String accessToken = util.attemptAuthenticationWith(employee);
         Task task = sampleTasks.get(0);
-
-        // create task dto from the sample task.
-        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
-
         Response response = given()
                 .contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + accessToken)
                 .when()
                 .get(String.format("%s/%s", API_URL, task.getTaskUuid()));
 
-        // extract the returned taskDto
-        TaskDto taskDto = response.getBody().as(TaskDto.class);
-
-        // check that the response status code is 200 OK.
-        response.then().statusCode(HttpStatus.OK.value());
-
-        // check that the returned taskDto is the expected one.
-        assertThat(taskDto).isEqualTo(expectedTaskDto);
+        // check that the response status code is 404 NOT_FOUND.
+        response.then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     @ParameterizedTest
@@ -286,47 +291,23 @@ class TaskControllerTest {
     }
 
     @Test
-    void shouldUpdateTaskByUuidAsAdmin() {
+    void shouldUpdateTaskByUuid() {
         /*
          * checks the following:
-         *   - account with role admin can update task by its uuid:
+         *   - ( account with role admin / employee the with whom the task is shared )  can update task by its uuid :
          *   - checks that the response status code is 200 OK.
          *   - checks that the returned taskDto is updated.
          * */
 
         // get sample account.
         Account admin = sampleAccounts.get(0);
-        String accessToken = util.attemptAuthenticationWith(admin);
+        Account employee = sampleAccounts.get(1);
 
-        // get sample task
-        Task task = sampleTasks.get(0);
+        // checks that an account with role admin can update task by uuid.
+        shouldUpdateTaskByUuidAs(admin);
 
-        // perform updates on the task
-        task = Util.updateTask(task);
-
-        // create taskDto from the task after the update.
-        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
-
-        // build request body from the updated task.
-        Map<String, Object> requestBody = Util.buildUpdateTaskRequestBody(task);
-
-        // send the request.
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + accessToken)
-                .when()
-                .body(requestBody)
-                .put(String.format("%s/%s", API_URL, task.getTaskUuid()));
-
-        // check that the response status code is as expected.
-        response.then()
-                .statusCode(HttpStatus.OK.value());
-
-        // extract the updated taskDto returned with the request.
-        TaskDto taskDto = response.getBody().as(TaskDto.class);
-
-        // check that the returned taskDto is equal to the expected one.
-        assertThat(taskDto).isEqualTo(expectedTaskDto);
+        // checks that the employee with whom the task is shared can update the task by uuid.
+        shouldUpdateTaskByUuidAs(employee);
     }
 
     @ParameterizedTest
@@ -637,5 +618,72 @@ class TaskControllerTest {
         arguments.add(Arguments.of(Map.of(), inValidDescriptionErrorMessage));
 
         return arguments.stream();
+    }
+
+    private void shouldUpdateTaskByUuidAs(Account account){
+        /*
+         *
+         * helper method checks the following:
+         *   - ( account with role admin / employee the with whom the task is shared )  can update task by its uuid :
+         *   - checks that the response status code is 200 OK.
+         *   - checks that the returned taskDto is updated.
+         * */
+
+        String accessToken = util.attemptAuthenticationWith(account);
+
+        // get sample task
+        Task task = sampleTasks.get(0);
+
+        // perform updates on the task
+        task = Util.updateTask(task);
+
+        // create taskDto from the task after the update.
+        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
+
+        // build request body from the updated task.
+        Map<String, Object> requestBody = Util.buildUpdateTaskRequestBody(task);
+
+        // send the request.
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .put(String.format("%s/%s", API_URL, task.getTaskUuid()));
+
+        // check that the response status code is as expected.
+        response.then()
+                .statusCode(HttpStatus.OK.value());
+
+        // extract the updated taskDto returned with the request.
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
+
+        // check that the returned taskDto is equal to the expected one.
+        assertThat(taskDto).isEqualTo(expectedTaskDto);
+    }
+
+    private void shouldGetTaskByUuidAs(Account account){
+        String accessToken = util.attemptAuthenticationWith(account);
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+
+        // create task dto from the sample task.
+        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(String.format("%s/%s", API_URL, task.getTaskUuid()));
+
+        // extract the returned taskDto
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
+
+        // check that the response status code is 200 OK.
+        response.then().statusCode(HttpStatus.OK.value());
+
+        // check that the returned taskDto is the expected one.
+        assertThat(taskDto).isEqualTo(expectedTaskDto);
     }
 }
