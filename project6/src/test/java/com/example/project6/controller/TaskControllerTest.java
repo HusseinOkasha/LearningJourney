@@ -12,6 +12,7 @@ import com.example.project6.util.entityAndDtoMappers.TaskMapper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -273,28 +275,6 @@ class TaskControllerTest {
 
         // check that the response status code is 404 NOT_FOUND.
         response.then().statusCode(HttpStatus.NOT_FOUND.value());
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideUuidsTestingGettingTaskWithInvalidUuid")
-    void shouldNotGetTaskWithInvalidUUID(String taskUuid, HttpStatus expectedStatusCode) {
-        /*
-         * InValid uuid means:
-         *   - no task with this uuid.
-         *   - malformed uuid.
-         * */
-
-        // get sample admin account.
-        Account admin = sampleAccounts.get(0);
-        String accessToken = util.attemptAuthenticationWith(admin);
-
-        given()
-                .contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + accessToken)
-                .when()
-                .get(String.format("%s/%s", API_URL, taskUuid))
-                .then()
-                .statusCode(expectedStatusCode.value());
     }
 
     /*
@@ -609,7 +589,7 @@ class TaskControllerTest {
     @ParameterizedTest
     @MethodSource("provideInvalidTaskStatus")
     void shouldNotUpdateTaskStatusByUuidWithInvalidData(Map<String, String> requestBody,
-                                                        Map<String, String> expectedErrors){
+                                                        Map<String, String> expectedErrors) {
         /*
          * test that an account of role ADMIN can't update the task status with invalid data.
          * Invalid data means:
@@ -641,8 +621,9 @@ class TaskControllerTest {
         assertThat(errors).isEqualTo(expectedErrors); // check that the error messages are returned as expected.
 
     }
+
     @Test
-    void shouldNotUpdateTaskStatusByUuid(){
+    void shouldNotUpdateTaskStatusByUuid() {
         /*
          * verifies that account with role employee whom the task is not shared with can't update task status by
          *  uuid.
@@ -678,11 +659,112 @@ class TaskControllerTest {
     }
 
     /*
+     * Tests for delete task by uuid.
+     * */
+    @Test
+    void shouldDeleteTaskByUuid() {
+        /*
+         * verifies that:
+         *   - account with role admin can delete task by uuid.
+         *   - response status code is 200 OK.
+         *   - when I try to get the same task.
+         *       - response status code is 404 NOT_FOUND.
+         * */
+
+        // get admin account.
+        Account admin = sampleAccounts.get(0);
+
+        // get sample task
+        Task task = sampleTasks.get(0);
+
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // send the request.
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(String.format("%s/%s", API_URL, task.getTaskUuid()))
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+    }
+
+    /*
+     * Tests using malformed / NonExistent uuid
+     * */
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidUuids")
+    void shouldHandleInvalidUuids(String endpoint,
+                                  HttpMethod httpMethod,
+                                  HttpStatus expectedStatusCode,
+                                  Map<String, String> requestBody
+    ) {
+        /* It verifies that endpoints handles the case of:
+         *   - NonExistent uuid
+         *       - checks that response status code is 404 NOT_FOUND
+         *   - Malformed uuid
+         *       - Checks that response status code is 400 BAD_REQUEST
+         * */
+
+        // get admin account.
+        Account admin = sampleAccounts.get(0);
+
+        String accessToken = util.attemptAuthenticationWith(admin);
+
+        // send the request.
+        RequestSpecification requestSpecification =
+                given()
+                        .contentType(ContentType.JSON)
+                        .header("Authorization", "Bearer " + accessToken);
+        if(httpMethod != HttpMethod.GET){
+            requestSpecification.body(requestBody);
+        }
+
+        requestSpecification
+                .when()
+                .request(httpMethod.toString(), endpoint)
+                .then()
+                .statusCode(expectedStatusCode.value());
+
+    }
+
+    /*
      * providers for parameterized tests.
      * */
-    static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid() {
-        return Stream.of(Arguments.of(UUID.randomUUID().toString(), HttpStatus.NOT_FOUND),
-                Arguments.of("randomString", HttpStatus.BAD_REQUEST));
+    static Stream<Arguments> provideInvalidUuids() {
+        final String randomString = "randomString";
+        final String nonExistent = UUID.randomUUID().toString();
+        Map<String, String> requestBody = Map.of(
+                "description", "new description",
+                "title", "new title",
+                "status", TaskStatus.DONE.toString()
+        );
+        return Stream.of(
+                Arguments.of(String.format("%s/%s", API_URL, randomString), HttpMethod.GET, HttpStatus.BAD_REQUEST,
+                        Map.of()),
+                Arguments.of(String.format("%s/%s", API_URL, nonExistent), HttpMethod.GET, HttpStatus.NOT_FOUND,
+                        Map.of()),
+                Arguments.of(String.format("%s/%s", API_URL, randomString), HttpMethod.PUT, HttpStatus.BAD_REQUEST,
+                        requestBody),
+                Arguments.of(String.format("%s/%s", API_URL, nonExistent), HttpMethod.PUT, HttpStatus.NOT_FOUND,
+                        requestBody),
+                Arguments.of(String.format("%s/%s/title", API_URL, randomString), HttpMethod.PATCH,
+                        HttpStatus.BAD_REQUEST, requestBody),
+                Arguments.of(String.format("%s/%s/title", API_URL, nonExistent), HttpMethod.PATCH,
+                        HttpStatus.NOT_FOUND, requestBody),
+                Arguments.of(String.format("%s/%s/description", API_URL, randomString), HttpMethod.PATCH,
+                        HttpStatus.BAD_REQUEST, requestBody),
+                Arguments.of(String.format("%s/%s/description", API_URL, nonExistent), HttpMethod.PATCH,
+                        HttpStatus.NOT_FOUND, requestBody),
+                Arguments.of(String.format("%s/%s/status", API_URL, randomString), HttpMethod.PATCH,
+                        HttpStatus.BAD_REQUEST, requestBody),
+                Arguments.of(String.format("%s/%s/status", API_URL, nonExistent), HttpMethod.PATCH,
+                        HttpStatus.NOT_FOUND, requestBody),
+                Arguments.of(String.format("%s/%s", API_URL, randomString), HttpMethod.DELETE, HttpStatus.BAD_REQUEST
+                        , requestBody)
+        );
     }
 
     static Stream<Arguments> provideInvalidTasksAndErrorMessages() {
@@ -803,7 +885,7 @@ class TaskControllerTest {
         ).collect(Collectors.toList());
 
         // create argument with request body doesn't contain the status.
-        arguments.add(Arguments.of(Map.of(), Map.of("status","must not be null")));
+        arguments.add(Arguments.of(Map.of(), Map.of("status", "must not be null")));
 
         return arguments.stream();
     }
