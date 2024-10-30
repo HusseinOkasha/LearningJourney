@@ -662,13 +662,11 @@ class TaskControllerTest {
      * Tests for delete task by uuid.
      * */
     @Test
-    void shouldDeleteTaskByUuid() {
+    void shouldDeleteTaskByUuidAsAdmin() {
         /*
          * verifies that:
          *   - account with role admin can delete task by uuid.
          *   - response status code is 200 OK.
-         *   - when I try to get the same task.
-         *       - response status code is 404 NOT_FOUND.
          * */
 
         // get admin account.
@@ -689,6 +687,37 @@ class TaskControllerTest {
                 .statusCode(HttpStatus.OK.value());
 
     }
+
+    @Test
+    void shouldNotDeleteTaskByUuidAsEmployee() {
+        /*
+         * verifies that:
+         *   - account with role admin can delete task by uuid.
+         *   - response status code is 401 UNAUTHORIZED
+         *
+         * */
+
+        // get admin account.
+        Account employee = sampleAccounts.get(2);
+
+        // get sample task
+        Task task = sampleTasks.get(0);
+
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        // send the request.
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .delete(String.format("%s/%s", API_URL, task.getTaskUuid()))
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+
+    }
+
+
+
 
     /*
      * Tests using malformed / NonExistent uuid
