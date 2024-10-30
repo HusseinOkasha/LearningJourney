@@ -24,10 +24,9 @@ public class ApiRequestHandler {
     @ExceptionHandler(value = {NotFoundException.class})
     public ResponseEntity<Object> handleNotFoundException(NotFoundException e) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
-        ApiExceptionDto apiExceptionDto = new ApiExceptionDto(
-                e.getMessage(), httpStatus, ZonedDateTime.now(ZoneId.of("Z"))
-        );
-        return new ResponseEntity<>(apiExceptionDto, httpStatus);
+        Map<String, String>errors = new HashMap<>();
+        errors.put("error", e.getMessage());
+        return new ResponseEntity<>(errors, httpStatus);
     }
     @ExceptionHandler(value = {MethodArgumentNotValidException.class})
     public ResponseEntity<Map<String, String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {

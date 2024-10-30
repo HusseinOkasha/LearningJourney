@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 
+import static io.restassured.RestAssured.request;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
@@ -158,6 +159,9 @@ class TaskControllerTest {
         dynamoDbClient.deleteTable(DeleteTableRequest.builder().tableName("app").build());
     }
 
+    /*
+     * create new task tests.
+     * */
     @Test
     void shouldCreateNewTaskAsAdmin() {
         /*
@@ -226,6 +230,9 @@ class TaskControllerTest {
         assertThat(errors).isEqualTo(expectedErrors);
     }
 
+    /*
+     * Get task by uuid tests
+     * */
     @Test
     void shouldGetTaskByUuid() {
         /*
@@ -290,6 +297,9 @@ class TaskControllerTest {
                 .statusCode(expectedStatusCode.value());
     }
 
+    /*
+     * Update task by uuid tests.
+     * */
     @Test
     void shouldUpdateTaskByUuid() {
         /*
@@ -348,7 +358,48 @@ class TaskControllerTest {
     }
 
     @Test
-    void shouldUpdateTaskTitleByUuidAsAdmin() {
+    void shouldNotUpdateTaskByUuid(){
+        /*
+        * verifies that:
+        *   - An employee with whom the task isn't shared can't update the task by uuid.
+        *   - response status code is 404 NOT_FOUND.
+        *   - response body is as expected.
+        * */
+
+        // get employee with whom the task isn't shared.
+        Account employee = sampleAccounts.get(3);
+        String accessToken = util.attemptAuthenticationWith(employee);
+        Task task = sampleTasks.get(0);
+
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+        requestBody.put("description", "new description");
+        requestBody.put("status", TaskStatus.DONE.toString());
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .put(String.format("%s/%s", API_URL, task.getTaskUuid()));
+
+        // extract the response body.
+        Map<String, String> responseBody = response.getBody().as(Map.class);
+
+        // check that the response status code is 404 NOT_FOUND.
+        response.then().statusCode(HttpStatus.NOT_FOUND.value());
+
+        // verifies that response body is as expected
+        assertThat(responseBody.get("error")).contains("couldn't find task with uuid");
+
+    }
+
+
+    /*
+     * Update task title by uuid tests.
+     * */
+    @Test
+    void shouldUpdateTaskTitleByUuid() {
         /*
          * checks that:
          *   - account with role admin can update the tasks title.
@@ -359,50 +410,26 @@ class TaskControllerTest {
         // get admin account.
         Account admin = sampleAccounts.get(0);
 
-        // get sample task.
-        Task task = sampleTasks.get(0);
+        // get employee account.
+        Account employee = sampleAccounts.get(2);
 
-        String accessToken = util.attemptAuthenticationWith(admin);
+        // verifies that an admin can update the task by UUID
+        shouldUpdateTaskTitleByUuidAs(admin);
 
-        //update the task title.
-        task.setTitle("updateTile");
-
-        // create taskDto to be the ground truth.
-        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
-
-        // build the request body.
-        Map<String, String> requestBody = Map.of("title", "updateTile");
-
-        // send the request.
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + accessToken)
-                .when()
-                .body(requestBody)
-                .patch(String.format("%s/%s/title", API_URL, task.getTaskUuid()));
-
-        // check that the response status code is as expected.
-        response.then()
-                .statusCode(HttpStatus.OK.value());
-
-        // extract the updated taskDto returned with the request.
-        TaskDto taskDto = response.getBody().as(TaskDto.class);
-
-        // check that the returned taskDto is equal to the expected one.
-        assertThat(taskDto).isEqualTo(expectedTaskDto);
-
+        // verifies that an employee with whom the task is shared can update the task by UUID
+        shouldUpdateTaskTitleByUuidAs(employee);
     }
 
     @ParameterizedTest
     @MethodSource("provideInvalidTaskTitle")
-    void shouldNotUpdateTaskTitleWithInValidData(Map<String, String> requestBody, Map<String, String> expectedErrors){
+    void shouldNotUpdateTaskTitleWithInValidData(Map<String, String> requestBody, Map<String, String> expectedErrors) {
         /*
-        * test that an account of role ADMIN can't update the task title with invalid data.
-        * Invalid data means:
-        *   - empty / title.
-        * Checks that:
-        *   - response status code is 400 BAD_REQUEST.
-        * */
+         * test that an account of role ADMIN can't update the task title with invalid data.
+         * Invalid data means:
+         *   - empty / title.
+         * Checks that:
+         *   - response status code is 400 BAD_REQUEST.
+         * */
 
         // get sample account
         Account admin = sampleAccounts.get(0);
@@ -419,7 +446,8 @@ class TaskControllerTest {
                 .body(requestBody)
                 .patch(String.format("%s/%s/title", API_URL, task.getTaskUuid()));
 
-        response.then().statusCode(HttpStatus.BAD_REQUEST.value()); // check that the response status code is 400 BAD_REQUEST.
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value()); // check that the response status code is 400
+        // BAD_REQUEST.
 
         Map<String, String> errors = response.getBody().as(Map.class);
 
@@ -428,10 +456,47 @@ class TaskControllerTest {
     }
 
     @Test
-    void shouldUpdateTaskDescriptionByUuidAsAdmin(){
+    void shouldNotUpdateTaskTitleByUuid(){
+        /*
+        * verifies that account with role employee whom the task is not shared with can't update task title by uuid.
+        * verifies that the response status code is 404 NOT_FOUND.
+        * verifies that the response body contains the expected error message.
+        * */
+
+        // get employee with whom the task isn't shared.
+        Account employee = sampleAccounts.get(3);
+        String accessToken = util.attemptAuthenticationWith(employee);
+        Task task = sampleTasks.get(0);
+
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("title", "new title");
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(String.format("%s/%s/title", API_URL, task.getTaskUuid()));
+
+        // extract the response body.
+        Map<String, String> responseBody = response.getBody().as(Map.class);
+
+        // check that the response status code is 404 NOT_FOUND.
+        response.then().statusCode(HttpStatus.NOT_FOUND.value());
+
+        // verifies that response body is as expected
+        assertThat(responseBody.get("error")).contains("couldn't find task with uuid");
+
+    }
+
+    /*
+     * Update task description by uuid tests.
+     * */
+    @Test
+    void shouldUpdateTaskDescriptionByUuid() {
         /*
          * checks that:
-         *   - account with role admin can update the tasks title.
+         *   - account with role admin/ employee with whom the task is shared can update the task description.
          *   - with response status code 200 OK.
          *   - And the returned taskDto(in the response body) is the same as the expected taskDto.
          * */
@@ -439,43 +504,18 @@ class TaskControllerTest {
         // get admin account.
         Account admin = sampleAccounts.get(0);
 
-        // get sample task.
-        Task task = sampleTasks.get(0);
+        // get employee account.
+        Account employee = sampleAccounts.get(0);
 
-        String accessToken = util.attemptAuthenticationWith(admin);
+        shouldUpdateTaskDescriptionByUuidAs(admin);
+        shouldUpdateTaskDescriptionByUuidAs(employee);
 
-        //update the task title.
-        task.setDescription("description updated");
-
-        // create taskDto to be the ground truth.
-        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
-
-        // build the request body.
-        Map<String, String> requestBody = Map.of("description", task.getDescription());
-
-        // send the request.
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + accessToken)
-                .when()
-                .body(requestBody)
-                .patch(String.format("%s/%s/description", API_URL, task.getTaskUuid()));
-
-        // check that the response status code is as expected.
-        response.then()
-                .statusCode(HttpStatus.OK.value());
-
-        // extract the updated taskDto returned with the request.
-        TaskDto taskDto = response.getBody().as(TaskDto.class);
-
-        // check that the returned taskDto is equal to the expected one.
-        assertThat(taskDto).isEqualTo(expectedTaskDto);
     }
 
     @ParameterizedTest
     @MethodSource("provideInvalidTaskDescription")
     void shouldNotUpdateTaskDescriptionWithInvalidData(Map<String, String> requestBody,
-                                                       Map<String, String> expectedErrors){
+                                                       Map<String, String> expectedErrors) {
         /*
          * test that an account of role ADMIN can't update the task description with invalid data.
          * Invalid data means:
@@ -500,14 +540,52 @@ class TaskControllerTest {
                 .body(requestBody)
                 .patch(String.format("%s/%s/description", API_URL, task.getTaskUuid()));
 
-        response.then().statusCode(HttpStatus.BAD_REQUEST.value()); // check that the response status code is 400 BAD_REQUEST.
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value()); // check that the response status code is 400
+        // BAD_REQUEST.
 
         Map<String, String> errors = response.getBody().as(Map.class);
 
         assertThat(errors).isEqualTo(expectedErrors); // check that the error messages are returned as expected.
 
     }
+    @Test
+    void shouldNotUpdateTaskDescriptionByUuid(){
+        /*
+         * verifies that account with role employee whom the task is not shared with can't update task description by uuid.
+         * verifies that the response status code is 404 NOT_FOUND.
+         * verifies that the response body contains the expected error message.
+         * */
 
+        // get employee with whom the task isn't shared.
+        Account employee = sampleAccounts.get(3);
+        String accessToken = util.attemptAuthenticationWith(employee);
+        Task task = sampleTasks.get(0);
+
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("description", "new description");
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .body(requestBody)
+                .when()
+                .patch(String.format("%s/%s/description", API_URL, task.getTaskUuid()));
+
+        // extract the response body.
+        Map<String, String> responseBody = response.getBody().as(Map.class);
+
+        // check that the response status code is 404 NOT_FOUND.
+        response.then().statusCode(HttpStatus.NOT_FOUND.value());
+
+        // verifies that response body is as expected
+        assertThat(responseBody.get("error")).contains("couldn't find task with uuid");
+
+    }
+
+
+    /*
+     * providers for parameterized tests.
+     * */
     static Stream<Arguments> provideUuidsTestingGettingTaskWithInvalidUuid() {
         return Stream.of(Arguments.of(UUID.randomUUID().toString(), HttpStatus.NOT_FOUND),
                 Arguments.of("randomString", HttpStatus.BAD_REQUEST));
@@ -588,13 +666,13 @@ class TaskControllerTest {
         return arguments.stream();
     }
 
-    static Stream<Arguments> provideInvalidTaskTitle(){
+    static Stream<Arguments> provideInvalidTaskTitle() {
         // get invalid titles
         List<String> inValidTitles = Util.getInvalidTaskTitles();
 
         // create arguments from them.
         List<Arguments> arguments = inValidTitles.stream().map(title ->
-                Arguments.of(Map.of("title",title),
+                Arguments.of(Map.of("title", title),
                         inValidTitleErrorMessage)
         ).collect(Collectors.toList());
 
@@ -604,13 +682,13 @@ class TaskControllerTest {
         return arguments.stream();
     }
 
-    static Stream<Arguments> provideInvalidTaskDescription(){
+    static Stream<Arguments> provideInvalidTaskDescription() {
         // get invalid titles
         List<String> inValidTitles = Util.getInvalidTaskDescriptions();
 
         // create arguments from them.
         List<Arguments> arguments = inValidTitles.stream().map(description ->
-                Arguments.of(Map.of("description",description),
+                Arguments.of(Map.of("description", description),
                         inValidDescriptionErrorMessage)
         ).collect(Collectors.toList());
 
@@ -620,7 +698,10 @@ class TaskControllerTest {
         return arguments.stream();
     }
 
-    private void shouldUpdateTaskByUuidAs(Account account){
+    /*
+     * helper methods
+     * */
+    private void shouldUpdateTaskByUuidAs(Account account) {
         /*
          *
          * helper method checks the following:
@@ -662,7 +743,7 @@ class TaskControllerTest {
         assertThat(taskDto).isEqualTo(expectedTaskDto);
     }
 
-    private void shouldGetTaskByUuidAs(Account account){
+    private void shouldGetTaskByUuidAs(Account account) {
         String accessToken = util.attemptAuthenticationWith(account);
 
         // get sample task.
@@ -685,5 +766,88 @@ class TaskControllerTest {
 
         // check that the returned taskDto is the expected one.
         assertThat(taskDto).isEqualTo(expectedTaskDto);
+    }
+
+    private void shouldUpdateTaskTitleByUuidAs(Account account){
+        /*
+         * Helper method checks that:
+         *   - the passed account can update the tasks title .
+         *   - with response status code 200 OK.
+         *   - And the returned taskDto(in the response body) is the same as the expected taskDto.
+         * */
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+
+        String accessToken = util.attemptAuthenticationWith(account);
+
+        //update the task title.
+        task.setTitle("updateTile");
+
+        // create taskDto to be the ground truth.
+        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
+
+        // build the request body.
+        Map<String, String> requestBody = Map.of("title", "updateTile");
+
+        // send the request.
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .patch(String.format("%s/%s/title", API_URL, task.getTaskUuid()));
+
+        // check that the response status code is as expected.
+        response.then()
+                .statusCode(HttpStatus.OK.value());
+
+        // extract the updated taskDto returned with the request.
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
+
+        // check that the returned taskDto is equal to the expected one.
+        assertThat(taskDto).isEqualTo(expectedTaskDto);
+    }
+
+    private void shouldUpdateTaskDescriptionByUuidAs(Account account){
+        /*
+         * checks that:
+         *   - the passed account can update the tasks title.
+         *   - with response status code 200 OK.
+         *   - And the returned taskDto(in the response body) is the same as the expected taskDto.
+         * */
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+
+        String accessToken = util.attemptAuthenticationWith(account);
+
+        //update the task title.
+        task.setDescription("description updated");
+
+        // create taskDto to be the ground truth.
+        TaskDto expectedTaskDto = TaskMapper.TaskEntityToTaskDto(task);
+
+        // build the request body.
+        Map<String, String> requestBody = Map.of("description", task.getDescription());
+
+        // send the request.
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .body(requestBody)
+                .patch(String.format("%s/%s/description", API_URL, task.getTaskUuid()));
+
+        // check that the response status code is as expected.
+        response.then()
+                .statusCode(HttpStatus.OK.value());
+
+        // extract the updated taskDto returned with the request.
+        TaskDto taskDto = response.getBody().as(TaskDto.class);
+
+        // check that the returned taskDto is equal to the expected one.
+        assertThat(taskDto).isEqualTo(expectedTaskDto);
+
     }
 }
