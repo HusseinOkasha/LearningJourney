@@ -5,11 +5,17 @@ import com.example.project6.Service.AccountTasksService;
 import com.example.project6.Service.TaskAccountsService;
 import com.example.project6.Service.TaskService;
 import com.example.project6.Util;
+import com.example.project6.dto.ProfileDto;
+import com.example.project6.dto.TaskAccountDto;
+import com.example.project6.dto.TaskDto;
 import com.example.project6.entity.Account;
 import com.example.project6.entity.AccountTaskLink;
 import com.example.project6.entity.Task;
 import com.example.project6.entity.TaskAccountLink;
+import com.example.project6.util.entityAndDtoMappers.TaskMapper;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,14 +24,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -146,10 +159,146 @@ class TaskAccountsControllerTest {
 
     @AfterEach
     void tearDown() {
+        dynamoDbClient.deleteTable(DeleteTableRequest.builder().tableName("app").build());
+    }
+
+    /*
+    * get account tasks tests.
+    * */
+    @Test
+    void shouldGetAccountTasks() {
+        /*
+         * verifies that :
+         *   - admin / employee with whom the task is shared,
+         *       can list all the accounts with whom the task is shared
+         *   - list of returned task account dtos has the .
+         *   - response status code is 200 OK.
+         * */
+
+        // get admin account.
+        Account admin = sampleAccounts.get(0);
+
+        // get employee account.
+        Account employee = sampleAccounts.get(2);
+
+        shouldGetAccountTasksAs(admin);
+        shouldGetAccountTasksAs(employee);
+    }
+
+    private void shouldGetAccountTasksAs(Account account) {
+        // authenticate as account.
+        String accessToken = util.attemptAuthenticationWith(account);
+
+        // get task
+        // note that this task  is shared with sampleAccounts.get(0) and sampleAccounts.get(2).
+        Task task = sampleTasks.get(0);
+
+        // create task account dtos.
+        // note that the specified accounts from sample accounts are already linked to previous task, look at the setup method.
+        List<TaskAccountDto> expectedTaskAccountDtos = List.of(
+                new TaskAccountDto(
+                        sampleAccounts.get(0).getAccountUuid(),
+                        sampleAccounts.get(0).getName(),
+                        task.getTaskUuid(),
+                        task.getTitle()
+                ),
+                new TaskAccountDto(
+                        sampleAccounts.get(2).getAccountUuid(),
+                        sampleAccounts.get(2).getName(),
+                        task.getTaskUuid(),
+                        task.getTitle()
+                )
+        );
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(String.format("%s/%s/accounts", API_URL, task.getTaskUuid()));
+
+        // extract the returned taskDto
+        Set<TaskAccountDto> taskAccountDtos = Set.copyOf(
+                response.jsonPath().getList("", TaskAccountDto.class)
+        );
+
+        // check that the response status code is 200 OK.
+        response.then().statusCode(HttpStatus.OK.value());
+
+        // check that all the returned task account dtos are the same as the expected ones.
+        taskAccountDtos.forEach(taskAccountDto -> assertThat(taskAccountDto).isIn(expectedTaskAccountDtos));
+        expectedTaskAccountDtos.forEach(expectedTaskAccountDto -> assertThat(expectedTaskAccountDto).isIn(taskAccountDtos));
     }
 
     @Test
-    void Test (){
+    void shouldNotGetTaskAccounts(){
+
+        /*
+        * Verifies that:
+        *   - employee with whom the task isn't shared,
+        *   - can get the task accounts.
+        *   - response status code is 404 NOT_FOUND.
+        *   - error message is same as expected one.
+        * */
+
+        // get task
+        // note that this task  is shared with sampleAccounts.get(0) and sampleAccounts.get(2).
+        Task task = sampleTasks.get(0);
+
+        // get employee account with whom the task isn't shared
+        Account employee = sampleAccounts.get(3);
+
+        // authenticate as account.
+        String accessToken = util.attemptAuthenticationWith(employee);
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(String.format("%s/%s/accounts", API_URL, task.getTaskUuid()));
+
+        response
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+
+        Map<String, String> error = response.getBody().as(Map.class);
+        Map<String, String> expectedError = Map.of(
+                "error", String.format("couldn't find task with uuid: %s that belongs to account with uuid: %s",
+                        task.getTaskUuid(), employee.getAccountUuid()
+                )
+        );
+
+        // check that the returned taskDto is the expected one.
+        assertThat(error).isEqualTo(expectedError);
+    }
+
+    /*
+    * Share task with account tests.
+    * */
+    @Test
+    void shouldShareTaskWithAccountAsAdmin(){
+        /*
+        * It verifies that:
+        *   - admin can share a task with other accounts.
+        *   - checks that response status code is 200 OK.
+        * */
+
+        // get sample account.
+        Account admin  = sampleAccounts.get(0);
+
+        // get sample task.
+        Task task = sampleTasks.get(0);
+
+        // authenticate with admin account.
+        String accessToken =  util.attemptAuthenticationWith(admin);
+
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .post(String.format("%s/%s/accounts/%s", API_URL, task.getTaskUuid(), admin.getAccountUuid()))
+                .then()
+                .statusCode(HttpStatus.OK.value());
 
     }
+
 }

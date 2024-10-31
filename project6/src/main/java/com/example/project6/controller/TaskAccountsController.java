@@ -1,7 +1,9 @@
 package com.example.project6.controller;
 
 import com.example.project6.Service.TaskAccountsService;
+import com.example.project6.dto.TaskAccountDto;
 import com.example.project6.entity.TaskAccountLink;
+import com.example.project6.util.entityAndDtoMappers.TaskAccountMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,9 +21,16 @@ public class TaskAccountsController {
         this.taskAccountsService = taskAccountsService;
     }
 
+    @PreAuthorize("(hasAuthority('ADMIN')) or (hasAuthority('EMPLOYEE') and" +
+            " @taskService.isTaskSharedWithUser(#taskUuid, T(com.example.project6.security.CustomUserDetails).cast(principal)))")
     @GetMapping("/{taskUuid}/accounts")
-    public ResponseEntity<List<TaskAccountLink>> getTaskAccounts(@PathVariable UUID taskUuid){
-        return new ResponseEntity<>(taskAccountsService.getTaskAccounts(taskUuid), HttpStatus.OK);
+    public ResponseEntity<List<TaskAccountDto>> getTaskAccounts(@PathVariable UUID taskUuid){
+        return new ResponseEntity<>(
+                taskAccountsService.getTaskAccounts(taskUuid)
+                        .stream()
+                        .map(TaskAccountMapper::TaskAccountToTaskAccountDto)
+                        .toList(),
+                HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
