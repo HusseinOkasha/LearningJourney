@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface Feedback {
   errorMessage: string;
@@ -22,6 +23,9 @@ function LoginComponent() {
 
   // state indicates whether ther request is being proccessed or not.
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // used for navigation between pages.
+  const navigate = useNavigate();
 
   // Email validation function
   const validateEmail = (email: string) => {
@@ -71,11 +75,18 @@ function LoginComponent() {
         }
       );
 
+      // update feedback.
       if (response.status == 200) {
         setFeedback({ successMessage: "Successful Login", errorMessage: "" });
       } else {
         setFeedback({ successMessage: "", errorMessage: "Login Failed" });
       }
+
+      // save the access token in the localStorage
+      localStorage.setItem("accessToken", response.data.accessToken);
+
+      // navigate to the home page.
+      navigate("/home");
     } catch (error) {
       setFeedback({ successMessage: "", errorMessage: "Login Failed" });
     } finally {
