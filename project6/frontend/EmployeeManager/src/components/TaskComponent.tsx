@@ -10,6 +10,7 @@ function TaskComponent() {
 
   // states
   const [task, setTask] = useState<Task>();
+  const [feedback, setFeedback] = useState({});
 
   useEffect(() => {
     const fetchData = async () => fetchTask();
@@ -18,25 +19,40 @@ function TaskComponent() {
 
   // method encapsulates the logic of fetching task.
   const fetchTask = async () => {
-    // construct the url.
-    const url = `http://localhost:8080/api/task/${taskUuid}`;
+    try {
+      // construct the url.
+      const url = `http://localhost:8080/api/task/${taskUuid}`;
 
-    // extract the access token.
-    const accessToken: string = localStorage.getItem("accessToken");
+      // extract the access token.
+      const accessToken: string = localStorage.getItem("accessToken");
 
-    // send the request.
-    const response: AxiosResponse = await axios.get(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+      // send the request.
+      const response: AxiosResponse = await axios.get(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
-    // update the state
-    setTask(response.data);
+      // update the state
+      setTask(response.data);
 
-    console.log(response);
+      console.log(response);
+    } catch (error) {
+      if (error.status == 401) {
+        setFeedback({ error: "you are unauthorized to access this page." });
+      } else {
+        setFeedback({ error: error.message });
+      }
+    }
   };
 
   return (
     <div className="container">
+      <div className="row justify-content-center my-2">
+        <div className="col-6">
+          {feedback.error && (
+            <div className="alert alert-danger">{feedback.error}</div>
+          )}
+        </div>
+      </div>
       <div className="row mx-1 my-2 justify-content-center">
         <div className="col-6">
           <p>title: {task?.title}</p>
