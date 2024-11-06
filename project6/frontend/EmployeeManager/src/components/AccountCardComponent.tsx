@@ -1,7 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Account } from "../types/Account";
-import LoginComponent from "./LoginComponent";
-import { useEffect } from "react";
+
 import { Button } from "react-bootstrap";
 
 function AccountCardComponent(props: Account) {
