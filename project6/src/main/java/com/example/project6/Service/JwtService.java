@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,13 +21,8 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-
-    private final Environment env;
-
-    @Autowired
-    public JwtService(Environment env) {
-        this.env = env;
-    }
+    @Value("${jwt.secret}")
+    private String secretKey;
 
     public UUID extractAccountUuid(String token) {
         return UUID.fromString(extractClaim(token, Claims::getSubject));
@@ -76,7 +72,7 @@ public class JwtService {
         // helper method that gets the secret key from the environment variables
         // returns a signature based on the provided secret.
 
-        String secretKey = env.getProperty("SECRET_KEY");
+
         if(secretKey == null || secretKey.isEmpty()){
             throw new IllegalArgumentException("couldn't find JWT_SECRET in the environment variables");
         }
