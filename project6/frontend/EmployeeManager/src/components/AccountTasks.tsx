@@ -13,6 +13,7 @@ function AccountTasks() {
 
   // states
   const [accountTasks, setAccountTasks] = useState<AccountTaskLink[]>([]);
+  const [feedback, setFeedback] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,19 +29,37 @@ function AccountTasks() {
     // get the access token from local storage
     const accessToken = localStorage.getItem("accessToken");
 
-    // send the request.
-    const response: AxiosResponse = await axios.get(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    console.log(response);
-    // update the state
-    setAccountTasks(response.data);
+    try {
+      // send the request.
+      const response: AxiosResponse = await axios.get(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      console.log(response);
+      // update the state
+      setAccountTasks(response.data);
 
-    console.log(accountTasks);
+      console.log(accountTasks);
+    } catch (error) {
+      if (error.status == 401) {
+        setFeedback({
+          error:
+            "Your are unauthorized to access this page, please login with admin account to access it.",
+        });
+      } else {
+        setFeedback({ error: error });
+      }
+    }
   };
 
   return (
-    <div>
+    <div className="container">
+      <div className="row justify-content-center my-2">
+        <div className="col-6">
+          {feedback.error && (
+            <div className="alert alert-danger">{feedback.error}</div>
+          )}
+        </div>
+      </div>
       {accountTasks.map((accountTask) => (
         <AccountTaskLinkComponent
           taskTitle={accountTask.taskTitle}
