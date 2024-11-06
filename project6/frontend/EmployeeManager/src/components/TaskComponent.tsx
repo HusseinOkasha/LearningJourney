@@ -1,5 +1,5 @@
-import axios, { Axios, AxiosResponse } from "axios";
-import React, { useEffect, useState } from "react";
+import axios, { AxiosResponse } from "axios";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Task from "../types/Task";
 

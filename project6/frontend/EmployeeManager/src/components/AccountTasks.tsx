@@ -1,8 +1,6 @@
 import axios, { AxiosResponse } from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import Task from "../types/Task";
-import TaskComponent from "./AccountTaskLinkComponent";
 import AccountTaskLink from "../types/AccountTaskLink";
 import AccountTaskLinkComponent from "./AccountTaskLinkComponent";
 
