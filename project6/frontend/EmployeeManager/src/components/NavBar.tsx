@@ -22,7 +22,9 @@ function NavBar() {
             </NavDropdown.Item>
           </NavDropdown>
           <NavDropdown title="Tasks" id="basic-nav-dropdown">
-            <NavDropdown.Item href="#">Create New Task</NavDropdown.Item>
+            <NavDropdown.Item as={Link} to="/new-task">
+              Create New Task
+            </NavDropdown.Item>
             <NavDropdown.Item href="#">All Tasks </NavDropdown.Item>
             <NavDropdown.Item href="#">My Tasks </NavDropdown.Item>
           </NavDropdown>
