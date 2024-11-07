@@ -9,15 +9,16 @@ import AllEmployeesComponent from "./components/AllEmployeesComponent";
 import NewTaskComponent from "./components/NewTaskComponent";
 import MyTasksComponent from "./components/MyTasksComponent";
 import EditTaskComponent from "./components/EditTaskComponent";
+import LandingPageComponent from "./components/LandingPageComponent";
 
 function App() {
   return (
     <>
       <BrowserRouter>
         <NavBar />
-
         <Routes>
           <Route path="/">
+            <Route index element={<LandingPageComponent />} />
             <Route path="/home" element={<HomeComponent />} />
             <Route path="/admins" element={<AllAdminsComponent />} />
             <Route path="/login" element={<LoginComponent />} />
