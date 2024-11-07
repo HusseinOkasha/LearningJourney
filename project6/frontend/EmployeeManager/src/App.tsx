@@ -8,6 +8,7 @@ import TaskComponent from "./components/TaskComponent";
 import AllEmployeesComponent from "./components/AllEmployeesComponent";
 import NewTaskComponent from "./components/NewTaskComponent";
 import MyTasksComponent from "./components/MyTasksComponent";
+import EditTaskComponent from "./components/EditTaskComponent";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/employees" element={<AllEmployeesComponent />} />
             <Route path="/new-task" element={<NewTaskComponent />} />
             <Route path="/my-tasks" element={<MyTasksComponent />} />
+            <Route path="/edit-task" element={<EditTaskComponent />} />
           </Route>
         </Routes>
       </BrowserRouter>

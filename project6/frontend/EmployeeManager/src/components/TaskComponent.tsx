@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Task from "../types/Task";
 import { Button } from "react-bootstrap";
 
@@ -8,6 +8,9 @@ function TaskComponent() {
   // extract the task uuid.
   const location = useLocation();
   const taskUuid = location.state?.taskUuid;
+
+  // navigation hook.
+  const navigate = useNavigate();
 
   // states
   const [task, setTask] = useState<Task>();
@@ -48,7 +51,7 @@ function TaskComponent() {
     }
   };
 
-  // method delete.
+  // method handles task deletion.
   const handleDeleteTask = async () => {
     try {
       // construct the url.
@@ -79,6 +82,12 @@ function TaskComponent() {
     }
   };
 
+  // method handles task editing.
+  const handleTaskEditing = () => {
+    // this method navigates to edit task component.
+    navigate("/edit-task", { state: { taskUuid: taskUuid, task: task } });
+  };
+
   return (
     <div className="container">
       <div className="row justify-content-center my-2">
@@ -101,7 +110,10 @@ function TaskComponent() {
       </div>
       <div className="row mx-1 my-2 justify-content-center">
         <div className="col-6">
-          <Button variant="outline-secondary "> Edit </Button>
+          <Button variant="outline-secondary" onClick={handleTaskEditing}>
+            {" "}
+            Edit{" "}
+          </Button>
           <Button variant="outline-secondary mx-1" onClick={handleDeleteTask}>
             Delete{" "}
           </Button>
