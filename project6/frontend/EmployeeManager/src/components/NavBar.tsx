@@ -26,7 +26,9 @@ function NavBar() {
               Create New Task
             </NavDropdown.Item>
             <NavDropdown.Item href="#">All Tasks </NavDropdown.Item>
-            <NavDropdown.Item href="#">My Tasks </NavDropdown.Item>
+            <NavDropdown.Item as={Link} to="/my-tasks">
+              My Tasks{" "}
+            </NavDropdown.Item>
           </NavDropdown>
         </Nav>
         <Nav className="ms-auto">

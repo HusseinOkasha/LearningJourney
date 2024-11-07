@@ -7,6 +7,7 @@ import AccountTasks from "./components/AccountTasks";
 import TaskComponent from "./components/TaskComponent";
 import AllEmployeesComponent from "./components/AllEmployeesComponent";
 import NewTaskComponent from "./components/NewTaskComponent";
+import MyTasksComponent from "./components/MyTasksComponent";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/task" element={<TaskComponent />} />
             <Route path="/employees" element={<AllEmployeesComponent />} />
             <Route path="/new-task" element={<NewTaskComponent />} />
+            <Route path="/my-tasks" element={<MyTasksComponent />} />
           </Route>
         </Routes>
       </BrowserRouter>
