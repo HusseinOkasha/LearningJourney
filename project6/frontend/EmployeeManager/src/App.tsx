@@ -10,6 +10,7 @@ import NewTaskComponent from "./components/NewTaskComponent";
 import MyTasksComponent from "./components/MyTasksComponent";
 import EditTaskComponent from "./components/EditTaskComponent";
 import LandingPageComponent from "./components/LandingPageComponent";
+import ShareTaskComponent from "./components/ShareTaskComponent";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="/new-task" element={<NewTaskComponent />} />
             <Route path="/my-tasks" element={<MyTasksComponent />} />
             <Route path="/edit-task" element={<EditTaskComponent />} />
+            <Route path="/task/share" element={<ShareTaskComponent />} />
           </Route>
         </Routes>
       </BrowserRouter>

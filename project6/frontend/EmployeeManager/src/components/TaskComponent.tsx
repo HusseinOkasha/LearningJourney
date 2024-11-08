@@ -88,6 +88,12 @@ function TaskComponent() {
     navigate("/edit-task", { state: { taskUuid: taskUuid, task: task } });
   };
 
+  // method handles sharing task
+  const handleSharingTask = () => {
+    // this method navigates to edit task component.
+    navigate("/task/share", { state: { taskUuid: taskUuid } });
+  };
+
   return (
     <div className="container">
       <div className="row justify-content-center my-2">
@@ -116,6 +122,9 @@ function TaskComponent() {
           </Button>
           <Button variant="outline-secondary mx-1" onClick={handleDeleteTask}>
             Delete{" "}
+          </Button>
+          <Button variant="outline-secondary mx-1" onClick={handleSharingTask}>
+            Share
           </Button>
         </div>
       </div>
