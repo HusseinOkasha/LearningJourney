@@ -11,7 +11,10 @@ function ShareTaskComponent() {
 
   // states
   const [employees, setEmployees] = useState<Account[]>([]);
-  const [feedback, setFeedback] = useState({});
+  const [feedback, setFeedback] = useState({
+    errorMessage: "",
+    successMessage: "",
+  });
   const [selectedEmployees, setSelectedEmployees] = useState(new Set());
 
   useEffect(() => {
@@ -86,8 +89,12 @@ function ShareTaskComponent() {
         {},
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
+      setFeedback({
+        successMessage: "Task shared successfully",
+        errorMessage: "",
+      });
     } catch (error) {
-      setFeedback({ errorMessage: error.message });
+      setFeedback({ successMessage: "", errorMessage: error.message });
     }
   };
 
@@ -95,8 +102,11 @@ function ShareTaskComponent() {
     <div className="container">
       <div className="row justify-content-center my-2">
         <div className="col-6">
-          {feedback.error && (
-            <div className="alert alert-danger">{feedback.error}</div>
+          {feedback.errorMessage && (
+            <div className="alert alert-danger">{feedback.errorMessage}</div>
+          )}
+          {feedback.successMessage && (
+            <div className="alert alert-success">{feedback.successMessage}</div>
           )}
         </div>
       </div>
