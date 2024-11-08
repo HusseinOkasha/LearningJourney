@@ -40,6 +40,9 @@ function NavBar() {
               <NavDropdown.Item as={Link} to="/employees">
                 Employees
               </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/employees/new">
+                Create New Employee
+              </NavDropdown.Item>
             </NavDropdown>
             <NavDropdown title="Tasks" id="basic-nav-dropdown">
               <NavDropdown.Item as={Link} to="/new-task">

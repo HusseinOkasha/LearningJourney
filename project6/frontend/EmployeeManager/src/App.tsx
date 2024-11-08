@@ -11,6 +11,7 @@ import MyTasksComponent from "./components/MyTasksComponent";
 import EditTaskComponent from "./components/EditTaskComponent";
 import LandingPageComponent from "./components/LandingPageComponent";
 import ShareTaskComponent from "./components/ShareTaskComponent";
+import CreateNewEmployeeComponent from "./components/CreateNewEmployeeComponent";
 
 function App() {
   return (
@@ -25,6 +26,10 @@ function App() {
             <Route path="/login" element={<LoginComponent />} />
             <Route path="/account/tasks" element={<AccountTasks />} />
             <Route path="/task" element={<TaskComponent />} />
+            <Route
+              path="/employees/new"
+              element={<CreateNewEmployeeComponent />}
+            />
             <Route path="/employees" element={<AllEmployeesComponent />} />
             <Route path="/new-task" element={<NewTaskComponent />} />
             <Route path="/my-tasks" element={<MyTasksComponent />} />
